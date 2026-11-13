@@ -66,3 +66,16 @@ The application prints the results for each DataFrame and Dataset operation to t
 The [`Employee_Spark-Scala3`](Employee_Spark-Scala3/) folder contains a separate employee-analysis project with reusable Spark DataFrame transformations and a captured sample output.
 
 See its [README](Employee_Spark-Scala3/README.md) for requirements and run instructions. The captured output is in [`Employee_Spark-Scala3/outputs/employee-analysis-output.txt`](Employee_Spark-Scala3/outputs/employee-analysis-output.txt).
+
+## Spark Nested JSON Assignment
+
+The [`SparkNestedJSONAssignment`](SparkNestedJSONAssignment/) folder contains the Scala/Spark assignment for reading and analyzing nested order JSON. It includes the sbt build files, the `orders.json` sample input, the Scala application, and captured output.
+
+Requirements: Java 17 and sbt. To run it from the repository root:
+
+```shell
+cd SparkNestedJSONAssignment
+sbt run
+```
+
+The captured run output is available at [`SparkNestedJSONAssignment/outputs/sample-run-output.txt`](SparkNestedJSONAssignment/outputs/sample-run-output.txt).

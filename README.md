@@ -36,3 +36,9 @@ The application prints the results for each DataFrame and Dataset operation to t
 ├── project/
 └── src/main/scala/com/example/TypedDatasetDemo.scala
 ```
+
+## Employee Spark Analysis
+
+The [`Employee_Spark-Scala3`](Employee_Spark-Scala3/) folder contains a separate employee-analysis project with reusable Spark DataFrame transformations and a captured sample output.
+
+See its [README](Employee_Spark-Scala3/README.md) for requirements and run instructions. The captured output is in [`Employee_Spark-Scala3/outputs/employee-analysis-output.txt`](Employee_Spark-Scala3/outputs/employee-analysis-output.txt).

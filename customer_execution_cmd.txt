@@ -1,0 +1,263 @@
+Windows PowerShell 5.1
+Copyright (C) Microsoft Corporation. All rights reserved.
+
+PS C:\Users\shanm> cd C:\Users\shanm\CustomerOrdersSparkSQL
+PS C:\Users\shanm\CustomerOrdersSparkSQL> $env:HADOOP_HOME = "C:\hadoop"
+PS C:\Users\shanm\CustomerOrdersSparkSQL> $env:Path += ";C:\hadoop\bin"
+PS C:\Users\shanm\CustomerOrdersSparkSQL> sbt clean
+[info] welcome to sbt 1.13.0 (Eclipse Adoptium Java 17.0.21)
+[info] loading project definition from C:\Users\shanm\CustomerOrdersSparkSQL\project
+[info] loading settings for project customerorderssparksql from build.sbt...
+[info] set current project to CustomerOrdersSparkSQL (in build file:/C:/Users/shanm/CustomerOrdersSparkSQL/)
+[success] Total time: 0 s, completed 13-Nov-2026, 4:22:41 pm
+PS C:\Users\shanm\CustomerOrdersSparkSQL> sbt compile
+[info] welcome to sbt 1.13.0 (Eclipse Adoptium Java 17.0.21)
+[info] loading project definition from C:\Users\shanm\CustomerOrdersSparkSQL\project
+[info] loading settings for project customerorderssparksql from build.sbt...
+[info] set current project to CustomerOrdersSparkSQL (in build file:/C:/Users/shanm/CustomerOrdersSparkSQL/)
+[info] Executing in batch mode. For better performance use sbt's shell
+[info] compiling 1 Scala source to C:\Users\shanm\CustomerOrdersSparkSQL\target\scala-2.12\classes ...
+[success] Total time: 9 s, completed 13-Nov-2026, 4:23:03 pm
+PS C:\Users\shanm\CustomerOrdersSparkSQL> sbt "runMain CustomerOrdersApp"
+[info] welcome to sbt 1.13.0 (Eclipse Adoptium Java 17.0.21)
+[info] loading project definition from C:\Users\shanm\CustomerOrdersSparkSQL\project
+[info] loading settings for project customerorderssparksql from build.sbt...
+[info] set current project to CustomerOrdersSparkSQL (in build file:/C:/Users/shanm/CustomerOrdersSparkSQL/)
+[info] running (fork) CustomerOrdersApp
+[error] Using Spark's default log4j profile: org/apache/spark/log4j2-defaults.properties
+[error] 26/11/13 16:23:21 INFO SparkContext: Running Spark version 3.5.9
+[error] 26/11/13 16:23:21 INFO SparkContext: OS info Windows 11, 10.0, amd64
+[error] 26/11/13 16:23:21 INFO SparkContext: Java version 17.0.21
+[error] 26/11/13 16:23:22 INFO ResourceUtils: ==============================================================
+[error] 26/11/13 16:23:22 INFO ResourceUtils: No custom resources configured for spark.driver.
+[error] 26/11/13 16:23:22 INFO ResourceUtils: ==============================================================
+[error] 26/11/13 16:23:22 INFO SparkContext: Submitted application: CustomerOrdersSparkSQL
+[error] 26/11/13 16:23:22 INFO ResourceProfile: Default ResourceProfile created, executor resources: Map(cores -> name: cores, amount: 1, script: , vendor: , memory -> name: memory, amount: 1024, script: , vendor: , offHeap -> name: offHeap, amount: 0, script: , vendor: ), task resources: Map(cpus -> name: cpus, amount: 1.0)
+[error] 26/11/13 16:23:22 INFO ResourceProfile: Limiting resource is cpu
+[error] 26/11/13 16:23:22 INFO ResourceProfileManager: Added ResourceProfile id: 0
+[error] 26/11/13 16:23:22 INFO SecurityManager: Changing view acls to: shanm
+[error] 26/11/13 16:23:22 INFO SecurityManager: Changing modify acls to: shanm
+[error] 26/11/13 16:23:22 INFO SecurityManager: Changing view acls groups to:
+[error] 26/11/13 16:23:22 INFO SecurityManager: Changing modify acls groups to:
+[error] 26/11/13 16:23:22 INFO SecurityManager: SecurityManager: authentication disabled; ui acls disabled; users with view permissions: shanm; groups with view permissions: EMPTY; users with modify permissions: shanm; groups with modify permissions: EMPTY
+[error] 26/11/13 16:23:22 INFO Utils: Successfully started service 'sparkDriver' on port 61166.
+[error] 26/11/13 16:23:22 INFO SparkEnv: Registering MapOutputTracker
+[error] 26/11/13 16:23:22 INFO SparkEnv: Registering BlockManagerMaster
+[error] 26/11/13 16:23:22 INFO BlockManagerMasterEndpoint: Using org.apache.spark.storage.DefaultTopologyMapper for getting topology information
+[error] 26/11/13 16:23:22 INFO BlockManagerMasterEndpoint: BlockManagerMasterEndpoint up
+[error] 26/11/13 16:23:22 INFO SparkEnv: Registering BlockManagerMasterHeartbeat
+[error] 26/11/13 16:23:22 INFO DiskBlockManager: Created local directory at C:\Users\shanm\AppData\Local\Temp\blockmgr-430b98e7-924a-4c02-a88d-4d5cc245b5e6
+[error] 26/11/13 16:23:22 INFO MemoryStore: MemoryStore started with capacity 1005.6 MiB
+[error] 26/11/13 16:23:22 INFO SparkEnv: Registering OutputCommitCoordinator
+[error] 26/11/13 16:23:22 INFO JettyUtils: Start Jetty 0.0.0.0:4040 for SparkUI
+[error] 26/11/13 16:23:23 INFO Utils: Successfully started service 'SparkUI' on port 4040.
+[error] 26/11/13 16:23:23 INFO Executor: Starting executor ID driver on host aaryasree
+[error] 26/11/13 16:23:23 INFO Executor: OS info Windows 11, 10.0, amd64
+[error] 26/11/13 16:23:23 INFO Executor: Java version 17.0.21
+[error] 26/11/13 16:23:23 INFO Executor: Starting executor with user classpath (userClassPathFirst = false): ''
+[error] 26/11/13 16:23:23 INFO Executor: Created or updated repl class loader org.apache.spark.util.MutableURLClassLoader@71e4b308 for default.
+[error] 26/11/13 16:23:23 INFO Utils: Successfully started service 'org.apache.spark.network.netty.NettyBlockTransferService' on port 61167.
+[error] 26/11/13 16:23:23 INFO NettyBlockTransferService: Server created on aaryasree:61167
+[error] 26/11/13 16:23:23 INFO BlockManager: Using org.apache.spark.storage.RandomBlockReplicationPolicy for block replication polic
+[error] 26/11/13 16:23:23 INFO BlockManagerMaster: Registering BlockManager BlockManagerId(driver, aaryasree, 61167, None)
+[error] 26/11/13 16:23:23 INFO BlockManagerMasterEndpoint: Registering block manager aaryasree:61167 with 1005.6 MiB RAM, BlockManagerId(driver, aaryasree, 61167, None)
+[error] 26/11/13 16:23:23 INFO BlockManagerMaster: Registered BlockManager BlockManagerId(driver, aaryasree, 61167, None)
+[error] 26/11/13 16:23:23 INFO BlockManager: Initialized BlockManager: BlockManagerId(driver, aaryasree, 61167, None)
+[info] ======================================
+[info]  CUSTOMER ORDERS SPARK SQL ASSIGNMENT
+[info] ======================================
+[info] ========== Q3.1 - CREATE DATABASE ==========
+[info] Available databases:
+[info] +---------+
+[info] |namespace|
+[info] +---------+
+[info] |default  |
+[info] |retail_db|
+[info] +---------+
+[info] Successfully selected database: retail_db
+[info] ========== Q3.2 - COMPLETED ORDERS VIEW ==========
+[info] Displaying completed orders:
+[info] +--------+-----------+----------+------+---------+
+[info] |order_id|customer_id|order_date|amount|status   |
+[info] +--------+-----------+----------+------+---------+
+[info] |101     |1          |2024-01-10|250.0 |Completed|
+[info] |102     |1          |2024-02-15|180.5 |Completed|
+[info] |104     |3          |2024-03-05|320.0 |Completed|
+[info] |105     |3          |2024-03-18|150.0 |Completed|
+[info] |107     |1          |2024-04-12|410.0 |Completed|
+[info] |108     |5          |2024-05-01|200.0 |Completed|
+[info] +--------+-----------+----------+------+---------+
+[info] ========== Q4.1 - CUSTOMER TOTAL SPEND ==========
+[info] +-------------+--------+-----------+
+[info] |name         |city    |total_spend|
+[info] +-------------+--------+-----------+
+[info] |Alice Johnson|New York|840.5      |
+[info] |Carol Lee    |New York|470.0      |
+[info] |Eva Martinez |Chicago |200.0      |
+[info] +-------------+--------+-----------+
+[info] ========== Q4.2 - CITY-WISE SPENDING ==========
+[info] +--------+----------+
+[info] |city    |city_total|
+[info] +--------+----------+
+[info] |New York|1310.5    |
+[info] +--------+----------+
+[info] ========== Q5.1 - INNER JOIN ==========
+[info] +--------+-------------+------+
+[info] |order_id|name         |amount|
+[info] +--------+-------------+------+
+[info] |101     |Alice Johnson|250.0 |
+[info] |102     |Alice Johnson|180.5 |
+[info] |104     |Carol Lee    |320.0 |
+[info] |105     |Carol Lee    |150.0 |
+[info] |107     |Alice Johnson|410.0 |
+[info] |108     |Eva Martinez |200.0 |
+[info] +--------+-------------+------+
+[info] ========== Q5.2 - LEFT JOIN ==========
+[info] +-----------+-------------+--------+------+
+[info] |customer_id|name         |order_id|amount|
+[info] +-----------+-------------+--------+------+
+[info] |1          |Alice Johnson|101     |250.0 |
+[info] |1          |Alice Johnson|102     |180.5 |
+[info] |1          |Alice Johnson|107     |410.0 |
+[info] |2          |Bob Smith    |103     |99.99 |
+[info] |3          |Carol Lee    |104     |320.0 |
+[info] |3          |Carol Lee    |105     |150.0 |
+[info] |4          |David Kim    |106     |75.25 |
+[info] |5          |Eva Martinez |108     |200.0 |
+[info] +-----------+-------------+--------+------+
+[info] ========== Q5.3 - FULL OUTER JOIN ==========
+[info] +-----------+-------------+------+
+[info] |customer_id|name         |tier  |
+[info] +-----------+-------------+------+
+[info] |1          |Alice Johnson|Gold  |
+[info] |2          |Bob Smith    |Silver|
+[info] |3          |Carol Lee    |NULL  |
+[info] |4          |David Kim    |NULL  |
+[info] |5          |Eva Martinez |NULL  |
+[info] |6          |NULL         |Bronze|
+[info] +-----------+-------------+------+
+[info] ========== Q5.4 - SELF JOIN ==========
+[info] +-------------+------------+--------+
+[info] |customer1    |customer2   |city    |
+[info] +-------------+------------+--------+
+[info] |Bob Smith    |Eva Martinez|Chicago |
+[info] |Alice Johnson|Carol Lee   |New York|
+[info] +-------------+------------+--------+
+[info] ========== Q6.1 - WINDOW RANKING FUNCTIONS ==========
+[info] +-------------+--------+-----------+-------+--------+--------------+
+[info] |name         |city    |total_spend|row_num|rank_num|dense_rank_num|
+[info] +-------------+--------+-----------+-------+--------+--------------+
+[info] |David Kim    |Boston  |0.0        |1      |1       |1             |
+[info] |Eva Martinez |Chicago |200.0      |1      |1       |1             |
+[info] |Bob Smith    |Chicago |0.0        |2      |2       |2             |
+[info] |Alice Johnson|New York|840.5      |1      |1       |1             |
+[info] |Carol Lee    |New York|470.0      |2      |2       |2             |
+[info] +-------------+--------+-----------+-------+--------+--------------+
+[info] ========== Q6.2 - LAG AND LEAD ==========
+[info] +-----------+--------+----------+------+---------------------+-----------------+
+[info] |customer_id|order_id|order_date|amount|previous_order_amount|next_order_amount|
+[info] +-----------+--------+----------+------+---------------------+-----------------+
+[info] |1          |101     |2024-01-10|250.0 |NULL                 |180.5            |
+[info] |1          |102     |2024-02-15|180.5 |250.0                |410.0            |
+[info] |1          |107     |2024-04-12|410.0 |180.5                |NULL             |
+[info] |3          |104     |2024-03-05|320.0 |NULL                 |150.0            |
+[info] |3          |105     |2024-03-18|150.0 |320.0                |NULL             |
+[info] |5          |108     |2024-05-01|200.0 |NULL                 |NULL             |
+[info] +-----------+--------+----------+------+---------------------+-----------------+
+[info] ========== CREATING ORDER ITEMS JSON VIEW ==========
+[info] ========== Q7.1 - TRANSFORM ==========
+[info] +--------+----------------------------------+
+[info] |order_id|transformed_items                 |
+[info] +--------+----------------------------------+
+[info] |101     |[{Laptop, 250.0}]                 |
+[info] |102     |[{Mouse, 50.0}, {Keyboard, 130.5}]|
+[info] |104     |[{Monitor, 320.0}]                |
+[info] |105     |[{Headset, 150.0}]                |
+[info] |107     |[{Laptop, 300.0}, {Mouse, 110.0}] |
+[info] |108     |[{Chair, 200.0}]                  |
+[info] +--------+----------------------------------+
+[info] ========== Q7.2 - FILTER ==========
+[info] +--------+----------------------+
+[info] |order_id|expensive_items       |
+[info] +--------+----------------------+
+[info] |101     |[{Laptop, 1, 250.0}]  |
+[info] |102     |[{Keyboard, 1, 130.5}]|
+[info] |104     |[{Monitor, 1, 320.0}] |
+[info] |105     |[]                    |
+[info] |107     |[{Laptop, 1, 300.0}]  |
+[info] |108     |[{Chair, 1, 200.0}]   |
+[info] +--------+----------------------+
+[info] ========== Q7.3 - AGGREGATE ==========
+[info] +--------+----------------+
+[info] |order_id|total_item_value|
+[info] +--------+----------------+
+[info] |101     |250.0           |
+[info] |102     |180.5           |
+[info] |104     |320.0           |
+[info] |105     |150.0           |
+[info] |107     |410.0           |
+[info] |108     |200.0           |
+[info] +--------+----------------+
+[info] ========== Q8.1 - EXPLODE AND JOIN ==========
+[info] +--------+-------------+--------+---+-----+----------+
+[info] |order_id|name         |product |qty|price|line_total|
+[info] +--------+-------------+--------+---+-----+----------+
+[info] |101     |Alice Johnson|Laptop  |1  |250.0|250.0     |
+[info] |102     |Alice Johnson|Mouse   |2  |25.0 |50.0      |
+[info] |102     |Alice Johnson|Keyboard|1  |130.5|130.5     |
+[info] |104     |Carol Lee    |Monitor |1  |320.0|320.0     |
+[info] |105     |Carol Lee    |Headset |3  |50.0 |150.0     |
+[info] |107     |Alice Johnson|Laptop  |1  |300.0|300.0     |
+[info] |107     |Alice Johnson|Mouse   |2  |55.0 |110.0     |
+[info] |108     |Eva Martinez |Chair   |1  |200.0|200.0     |
+[info] +--------+-------------+--------+---+-----+----------+
+[info] ========== Q8.2 - NAMED_STRUCT ==========
+[info] +--------+-------------------------+
+[info] |order_id|customer_info            |
+[info] +--------+-------------------------+
+[info] |101     |{Alice Johnson, New York}|
+[info] |102     |{Alice Johnson, New York}|
+[info] |103     |{Bob Smith, Chicago}     |
+[info] |104     |{Carol Lee, New York}    |
+[info] |105     |{Carol Lee, New York}    |
+[info] |106     |{David Kim, Boston}      |
+[info] |107     |{Alice Johnson, New York}|
+[info] |108     |{Eva Martinez, Chicago}  |
+[info] +--------+-------------------------+
+[info] ========== Q9.1 - TOP SPENDER PER CITY ==========
+[info] +-------------+--------+-----------+
+[info] |name         |city    |total_spend|
+[info] +-------------+--------+-----------+
+[info] |David Kim    |Boston  |0.0        |
+[info] |Eva Martinez |Chicago |200.0      |
+[info] |Alice Johnson|New York|840.5      |
+[info] +-------------+--------+-----------+
+[info] ========== Q9.2 - ORDER ITEM SUMMARY ==========
+[info] +--------+----------+-----------+-----------------+
+[info] |order_id|item_count|total_value|products         |
+[info] +--------+----------+-----------+-----------------+
+[info] |101     |1         |250.0      |[Laptop]         |
+[info] |102     |2         |180.5      |[Mouse, Keyboard]|
+[info] |104     |1         |320.0      |[Monitor]        |
+[info] |105     |1         |150.0      |[Headset]        |
+[info] |107     |2         |410.0      |[Laptop, Mouse]  |
+[info] |108     |1         |200.0      |[Chair]          |
+[info] +--------+----------+-----------+-----------------+
+[info] ========== Q9.3 - RUNNING TOTAL SPEND ==========
+[info] +-----------+-------------+--------+----------+--------+---+-----+----------+-------------+
+[info] |customer_id|name         |order_id|order_date|product |qty|price|line_total|running_total|
+[info] +-----------+-------------+--------+----------+--------+---+-----+----------+-------------+
+[info] |1          |Alice Johnson|101     |2024-01-10|Laptop  |1  |250.0|250.0     |250.0        |
+[info] |1          |Alice Johnson|102     |2024-02-15|Keyboard|1  |130.5|130.5     |380.5        |
+[info] |1          |Alice Johnson|102     |2024-02-15|Mouse   |2  |25.0 |50.0      |430.5        |
+[info] |1          |Alice Johnson|107     |2024-04-12|Laptop  |1  |300.0|300.0     |730.5        |
+[info] |1          |Alice Johnson|107     |2024-04-12|Mouse   |2  |55.0 |110.0     |840.5        |
+[info] |3          |Carol Lee    |104     |2024-03-05|Monitor |1  |320.0|320.0     |320.0        |
+[info] |3          |Carol Lee    |105     |2024-03-18|Headset |3  |50.0 |150.0     |470.0        |
+[info] |5          |Eva Martinez |108     |2024-05-01|Chair   |1  |200.0|200.0     |200.0        |
+[info] +-----------+-------------+--------+----------+--------+---+-----+----------+-------------+
+[info] ======================================
+[info]  ASSIGNMENT EXECUTION COMPLETED
+[info] ======================================
+[success] Total time: 20 s, completed 13-Nov-2026, 4:23:37 pm
+PS C:\Users\shanm\CustomerOrdersSparkSQL>

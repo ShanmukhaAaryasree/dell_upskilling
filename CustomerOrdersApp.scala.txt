@@ -1,0 +1,564 @@
+
+import org.apache.spark.sql.SparkSession
+
+object CustomerOrdersApp {
+
+  def main(args: Array[String]): Unit = {
+
+    // ==========================================
+    // SPARK SESSION
+    // ==========================================
+
+    val spark = SparkSession.builder()
+      .appName("CustomerOrdersSparkSQL")
+      .master("local[*]")
+      .getOrCreate()
+
+    spark.sparkContext.setLogLevel("ERROR")
+
+    import spark.implicits._
+
+    println("\n======================================")
+    println(" CUSTOMER ORDERS SPARK SQL ASSIGNMENT")
+    println("======================================")
+
+    // ==========================================
+    // SAMPLE CUSTOMER DATA
+    // ==========================================
+
+    val customers = Seq(
+      (1, "Alice Johnson", "New York", "2023-01-15"),
+      (2, "Bob Smith", "Chicago", "2023-02-20"),
+      (3, "Carol Lee", "New York", "2023-03-10"),
+      (4, "David Kim", "Boston", "2023-04-05"),
+      (5, "Eva Martinez", "Chicago", "2023-05-12")
+    ).toDF("customer_id", "name", "city", "signup_date")
+
+    // ==========================================
+    // SAMPLE ORDER DATA
+    // ==========================================
+
+    val orders = Seq(
+      (101, 1, "2024-01-10", 250.00, "Completed"),
+      (102, 1, "2024-02-15", 180.50, "Completed"),
+      (103, 2, "2024-01-20", 99.99, "Cancelled"),
+      (104, 3, "2024-03-05", 320.00, "Completed"),
+      (105, 3, "2024-03-18", 150.00, "Completed"),
+      (106, 4, "2024-04-01", 75.25, "Pending"),
+      (107, 1, "2024-04-12", 410.00, "Completed"),
+      (108, 5, "2024-05-01", 200.00, "Completed")
+    ).toDF("order_id", "customer_id", "order_date", "amount", "status")
+
+    // ==========================================
+    // SAMPLE ORDER ITEMS DATA
+    // ==========================================
+
+    val orderItemsRaw = Seq(
+      (101, """[{"product":"Laptop","qty":1,"price":250.0}]"""),
+      (102, """[{"product":"Mouse","qty":2,"price":25.0},{"product":"Keyboard","qty":1,"price":130.5}]"""),
+      (104, """[{"product":"Monitor","qty":1,"price":320.0}]"""),
+      (105, """[{"product":"Headset","qty":3,"price":50.0}]"""),
+      (107, """[{"product":"Laptop","qty":1,"price":300.0},{"product":"Mouse","qty":2,"price":55.0}]"""),
+      (108, """[{"product":"Chair","qty":1,"price":200.0}]""")
+    ).toDF("order_id", "items_json")
+
+    // ==========================================
+    // CREATE TEMPORARY VIEWS
+    // ==========================================
+
+    customers.createOrReplaceTempView("customers")
+    orders.createOrReplaceTempView("orders")
+    orderItemsRaw.createOrReplaceTempView("order_items_raw")
+
+    // ==========================================
+    // Q3.1 - CREATE DATABASE
+    // ==========================================
+
+    println("\n========== Q3.1 - CREATE DATABASE ==========")
+
+    spark.sql("""
+      CREATE DATABASE IF NOT EXISTS retail_db
+    """)
+
+    println("Available databases:")
+
+    spark.sql("SHOW DATABASES").show(false)
+
+    spark.sql("USE retail_db")
+
+    println("Successfully selected database: retail_db")
+
+    // ==========================================
+    // Q3.2 - CREATE COMPLETED ORDERS VIEW
+    // ==========================================
+
+    println("\n========== Q3.2 - COMPLETED ORDERS VIEW ==========")
+
+    spark.sql("""
+      CREATE OR REPLACE TEMP VIEW completed_orders AS
+      SELECT *
+      FROM orders
+      WHERE status = 'Completed'
+    """)
+
+    println("Displaying completed orders:")
+
+    spark.sql("""
+      SELECT *
+      FROM completed_orders
+      ORDER BY order_id
+    """).show(false)
+
+    // ==========================================
+    // Q4.1 - TOTAL SPEND PER CUSTOMER USING CTE
+    // ==========================================
+
+    println("\n========== Q4.1 - CUSTOMER TOTAL SPEND ==========")
+
+    spark.sql("""
+      WITH customer_spend AS (
+        SELECT
+          c.customer_id,
+          c.name,
+          c.city,
+          SUM(o.amount) AS total_spend
+        FROM customers c
+        INNER JOIN completed_orders o
+          ON c.customer_id = o.customer_id
+        GROUP BY
+          c.customer_id,
+          c.name,
+          c.city
+      )
+      SELECT
+        name,
+        city,
+        total_spend
+      FROM customer_spend
+      ORDER BY total_spend DESC
+    """).show(false)
+
+    // ==========================================
+    // Q4.2 - CITIES WITH TOTAL ABOVE 400
+    // ==========================================
+
+    println("\n========== Q4.2 - CITY-WISE SPENDING ==========")
+
+    spark.sql("""
+      SELECT
+        c.city,
+        SUM(o.amount) AS city_total
+      FROM customers c
+      INNER JOIN completed_orders o
+        ON c.customer_id = o.customer_id
+      GROUP BY c.city
+      HAVING SUM(o.amount) > 400
+      ORDER BY city_total DESC
+    """).show(false)
+
+    // ==========================================
+    // Q5.1 - INNER JOIN
+    // ==========================================
+
+    println("\n========== Q5.1 - INNER JOIN ==========")
+
+    spark.sql("""
+      SELECT
+        o.order_id,
+        c.name,
+        o.amount
+      FROM orders o
+      INNER JOIN customers c
+        ON o.customer_id = c.customer_id
+      WHERE o.status = 'Completed'
+      ORDER BY o.order_id
+    """).show(false)
+
+    // ==========================================
+    // Q5.2 - LEFT JOIN
+    // ==========================================
+
+    println("\n========== Q5.2 - LEFT JOIN ==========")
+
+    spark.sql("""
+      SELECT
+        c.customer_id,
+        c.name,
+        o.order_id,
+        o.amount
+      FROM customers c
+      LEFT JOIN orders o
+        ON c.customer_id = o.customer_id
+      ORDER BY c.customer_id, o.order_id
+    """).show(false)
+
+    // ==========================================
+    // Q5.3 - FULL OUTER JOIN
+    // ==========================================
+
+    println("\n========== Q5.3 - FULL OUTER JOIN ==========")
+
+    spark.sql("""
+      WITH loyalty AS (
+        SELECT 1 AS customer_id, 'Gold' AS tier
+        UNION ALL
+        SELECT 2, 'Silver'
+        UNION ALL
+        SELECT 6, 'Bronze'
+      )
+      SELECT
+        COALESCE(c.customer_id, l.customer_id) AS customer_id,
+        c.name,
+        l.tier
+      FROM customers c
+      FULL OUTER JOIN loyalty l
+        ON c.customer_id = l.customer_id
+      ORDER BY customer_id
+    """).show(false)
+
+    // ==========================================
+    // Q5.4 - SELF JOIN
+    // ==========================================
+
+    println("\n========== Q5.4 - SELF JOIN ==========")
+
+    spark.sql("""
+      SELECT
+        c1.name AS customer1,
+        c2.name AS customer2,
+        c1.city
+      FROM customers c1
+      INNER JOIN customers c2
+        ON c1.city = c2.city
+       AND c1.customer_id < c2.customer_id
+      ORDER BY c1.city
+    """).show(false)
+
+    // ==========================================
+    // Q6.1 - ROW_NUMBER, RANK, DENSE_RANK
+    // ==========================================
+
+    println("\n========== Q6.1 - WINDOW RANKING FUNCTIONS ==========")
+
+    spark.sql("""
+      WITH customer_spend AS (
+        SELECT
+          c.customer_id,
+          c.name,
+          c.city,
+          COALESCE(SUM(o.amount), 0) AS total_spend
+        FROM customers c
+        LEFT JOIN completed_orders o
+          ON c.customer_id = o.customer_id
+        GROUP BY
+          c.customer_id,
+          c.name,
+          c.city
+      )
+      SELECT
+        name,
+        city,
+        total_spend,
+
+        ROW_NUMBER() OVER (
+          PARTITION BY city
+          ORDER BY total_spend DESC
+        ) AS row_num,
+
+        RANK() OVER (
+          PARTITION BY city
+          ORDER BY total_spend DESC
+        ) AS rank_num,
+
+        DENSE_RANK() OVER (
+          PARTITION BY city
+          ORDER BY total_spend DESC
+        ) AS dense_rank_num
+
+      FROM customer_spend
+      ORDER BY city, row_num
+    """).show(false)
+
+    // ==========================================
+    // Q6.2 - LAG AND LEAD
+    // ==========================================
+
+    println("\n========== Q6.2 - LAG AND LEAD ==========")
+
+    spark.sql("""
+      SELECT
+        customer_id,
+        order_id,
+        order_date,
+        amount,
+
+        LAG(amount) OVER (
+          PARTITION BY customer_id
+          ORDER BY order_date
+        ) AS previous_order_amount,
+
+        LEAD(amount) OVER (
+          PARTITION BY customer_id
+          ORDER BY order_date
+        ) AS next_order_amount
+
+      FROM completed_orders
+      ORDER BY customer_id, order_date
+    """).show(false)
+
+    // ==========================================
+    // CREATE ORDER_ITEMS VIEW BY PARSING JSON
+    // ==========================================
+
+    println("\n========== CREATING ORDER ITEMS JSON VIEW ==========")
+
+    spark.sql("""
+      CREATE OR REPLACE TEMP VIEW order_items AS
+      SELECT
+        order_id,
+        FROM_JSON(
+          items_json,
+          'ARRAY<STRUCT<product: STRING, qty: INT, price: DOUBLE>>'
+        ) AS items
+      FROM order_items_raw
+    """)
+
+    // ==========================================
+    // Q7.1 - TRANSFORM
+    // ==========================================
+
+    println("\n========== Q7.1 - TRANSFORM ==========")
+
+    spark.sql("""
+      SELECT
+        order_id,
+        TRANSFORM(
+          items,
+          x -> NAMED_STRUCT(
+            'product', x.product,
+            'line_total', x.qty * x.price
+          )
+        ) AS transformed_items
+      FROM order_items
+      ORDER BY order_id
+    """).show(false)
+
+    // ==========================================
+    // Q7.2 - FILTER
+    // ==========================================
+
+    println("\n========== Q7.2 - FILTER ==========")
+
+    spark.sql("""
+      SELECT
+        order_id,
+        FILTER(
+          items,
+          x -> x.price > 100
+        ) AS expensive_items
+      FROM order_items
+      ORDER BY order_id
+    """).show(false)
+
+    // ==========================================
+    // Q7.3 - AGGREGATE
+    // ==========================================
+
+    println("\n========== Q7.3 - AGGREGATE ==========")
+
+    spark.sql("""
+      SELECT
+        order_id,
+        AGGREGATE(
+          items,
+          CAST(0 AS DOUBLE),
+          (acc, x) -> acc + (x.qty * x.price)
+        ) AS total_item_value
+      FROM order_items
+      ORDER BY order_id
+    """).show(false)
+
+    // ==========================================
+    // Q8.1 - EXPLODE AND JOIN
+    // ==========================================
+
+    println("\n========== Q8.1 - EXPLODE AND JOIN ==========")
+
+    spark.sql("""
+      WITH exploded_items AS (
+        SELECT
+          order_id,
+          item.product AS product,
+          item.qty AS qty,
+          item.price AS price
+        FROM order_items
+        LATERAL VIEW EXPLODE(items) exploded AS item
+      )
+      SELECT
+        o.order_id,
+        c.name,
+        ei.product,
+        ei.qty,
+        ei.price,
+        ei.qty * ei.price AS line_total
+      FROM exploded_items ei
+      INNER JOIN orders o
+        ON ei.order_id = o.order_id
+      INNER JOIN customers c
+        ON o.customer_id = c.customer_id
+      ORDER BY o.order_id
+    """).show(false)
+
+    // ==========================================
+    // Q8.2 - NAMED_STRUCT
+    // ==========================================
+
+    println("\n========== Q8.2 - NAMED_STRUCT ==========")
+
+    spark.sql("""
+      SELECT
+        o.order_id,
+        NAMED_STRUCT(
+          'name', c.name,
+          'city', c.city
+        ) AS customer_info
+      FROM orders o
+      INNER JOIN customers c
+        ON o.customer_id = c.customer_id
+      ORDER BY o.order_id
+    """).show(false)
+
+    // ==========================================
+    // Q9.1 - TOP SPENDER PER CITY
+    // ==========================================
+
+    println("\n========== Q9.1 - TOP SPENDER PER CITY ==========")
+
+    spark.sql("""
+      WITH customer_spend AS (
+        SELECT
+          c.customer_id,
+          c.name,
+          c.city,
+          COALESCE(SUM(o.amount), 0) AS total_spend
+        FROM customers c
+        LEFT JOIN orders o
+          ON c.customer_id = o.customer_id
+         AND o.status = 'Completed'
+        GROUP BY
+          c.customer_id,
+          c.name,
+          c.city
+      ),
+      ranked_customers AS (
+        SELECT
+          customer_id,
+          name,
+          city,
+          total_spend,
+          ROW_NUMBER() OVER (
+            PARTITION BY city
+            ORDER BY total_spend DESC
+          ) AS rn
+        FROM customer_spend
+      )
+      SELECT
+        name,
+        city,
+        total_spend
+      FROM ranked_customers
+      WHERE rn = 1
+      ORDER BY city
+    """).show(false)
+
+    // ==========================================
+    // Q9.2 - HIGHER-ORDER FUNCTIONS SUMMARY
+    // ==========================================
+
+    println("\n========== Q9.2 - ORDER ITEM SUMMARY ==========")
+
+    spark.sql("""
+      SELECT
+        order_id,
+
+        SIZE(items) AS item_count,
+
+        AGGREGATE(
+          items,
+          CAST(0 AS DOUBLE),
+          (acc, x) -> acc + (x.qty * x.price)
+        ) AS total_value,
+
+        TRANSFORM(
+          items,
+          x -> x.product
+        ) AS products
+
+      FROM order_items
+      ORDER BY order_id
+    """).show(false)
+
+    // ==========================================
+    // Q9.3 - RUNNING TOTAL SPEND PER CUSTOMER
+    // ==========================================
+
+    println("\n========== Q9.3 - RUNNING TOTAL SPEND ==========")
+
+    spark.sql("""
+      WITH exploded_items AS (
+        SELECT
+          oi.order_id,
+          item.product AS product,
+          item.qty AS qty,
+          item.price AS price
+        FROM order_items oi
+        LATERAL VIEW EXPLODE(oi.items) exploded AS item
+      ),
+      customer_item_spend AS (
+        SELECT
+          c.customer_id,
+          c.name,
+          o.order_id,
+          o.order_date,
+          ei.product,
+          ei.qty,
+          ei.price,
+          (ei.qty * ei.price) AS line_total
+        FROM exploded_items ei
+        INNER JOIN orders o
+          ON ei.order_id = o.order_id
+        INNER JOIN customers c
+          ON o.customer_id = c.customer_id
+        WHERE o.status = 'Completed'
+      )
+      SELECT
+        customer_id,
+        name,
+        order_id,
+        order_date,
+        product,
+        qty,
+        price,
+        line_total,
+
+        SUM(line_total) OVER (
+          PARTITION BY customer_id
+          ORDER BY order_date, order_id, product
+          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+        ) AS running_total
+
+      FROM customer_item_spend
+      ORDER BY customer_id, order_date, order_id, product
+    """).show(false)
+
+    // ==========================================
+    // STOP SPARK SESSION
+    // ==========================================
+
+    println("\n======================================")
+    println(" ASSIGNMENT EXECUTION COMPLETED")
+    println("======================================")
+
+    spark.stop()
+  }
+}

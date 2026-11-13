@@ -1,0 +1,321 @@
+scala> case class Candidate(name: String, score: Option[Int])
+defined class Candidate
+
+scala> val candidates = List(
+     |   Candidate("John", Some(85)),
+     |   Candidate("David", Some(45)),
+     |   Candidate("Smith", None),
+     |   Candidate("Peter", Some(75)),
+     |   Candidate("Alex", None)
+     | )
+val candidates: List[Candidate] = List(Candidate(John,Some(85)), Candidate(David,Some(45)), Candidate(Smith,None), Candidate(Peter,Some(75)), Candidate(Alex,None))
+
+scala> val passed = candidates.filter(c => c.score.exists(_ >= 60))
+val passed: List[Candidate] = List(Candidate(John,Some(85)), Candidate(Peter,Some(75)))
+
+scala> val failed = candidates.filter(c => c.score.exists(_ < 60))
+val failed: List[Candidate] = List(Candidate(David,Some(45)))
+
+scala> val pending = candidates.filter(_.score.isEmpty)
+val pending: List[Candidate] = List(Candidate(Smith,None), Candidate(Alex,None))
+
+scala> val completedScores = candidates.flatMap(_.score)
+val completedScores: List[Int] = List(85, 45, 75)
+
+scala> val average = completedScores.map(_.toDouble).sum / completedScores.size
+val average: Double = 68.33333333333333
+
+scala> println("Passed candidates: " + passed.map(_.name).mkString(", "))
+Passed candidates: John, Peter
+
+scala> println("Failed candidates: " + failed.map(_.name).mkString(", "))
+Failed candidates: David
+
+scala> println("Pending candidates: " + pending.map(_.name).mkString(", "))
+Pending candidates: Smith, Alex
+
+scala> println(f"Average score: $average%.2f")
+Average score: 68.33
+
+scala> candidates.foreach {
+     |   case Candidate(name, Some(score)) => println(name + " scored " + score)
+     |   case Candidate(name, None) => println(name + " has not completed the assessment")
+     | }
+John scored 85
+David scored 45
+Smith has not completed the assessment
+Peter scored 75
+Alex has not completed the assessment
+
+
+scala> case class Employee(id: Int, name: String, department: String, salary: Option[Double])
+defined class Employee
+
+scala> val employees = List(
+     |   Employee(101, "John", "IT", Some(50000)),
+     |   Employee(102, "David", "HR", Some(30000)),
+     |   Employee(103, "Smith", "IT", None),
+     |   Employee(104, "Peter", "Finance", Some(-1000)),
+     |   Employee(105, "Alex", "IT", Some(70000))
+     | )
+val employees: List[Employee] = List(Employee(101,John,IT,Some(50000.0)), Employee(102,David,HR,Some(30000.0)), Employee(103,Smith,IT,None), Employee(104,Peter,Finance,Some(-1000.0)), Employee(105,Alex,IT,Some(70000.0)))
+
+scala> def validateSalary(employee: Employee): Either[String, Double] = {
+     |   employee.salary match {
+     |     case Some(salary) if salary > 0 => Right(salary)
+     |     case Some(_) => Left("Invalid salary")
+     |     case None => Left("Salary is missing")
+     |   }
+     | }
+def validateSalary(employee: Employee): Either[String,Double]
+
+scala> val results = employees.map(e => (e, validateSalary(e)))
+val results: List[(Employee, Either[String,Double])] = ...
+
+scala> val validEmployees = results.collect {
+     |   case (employee, Right(_)) => employee
+     | }
+val validEmployees: List[Employee] = List(Employee(101,John,IT,Some(50000.0)), Employee(102,David,HR,Some(30000.0)), Employee(105,Alex,IT,Some(70000.0)))
+
+scala> val invalidEmployees = results.collect {
+     |   case (employee, Left(_)) => employee
+     | }
+val invalidEmployees: List[Employee] = List(Employee(103,Smith,IT,None), Employee(104,Peter,Finance,Some(-1000.0)))
+
+scala> val validITEmployees = validEmployees.filter(_.department == "IT")
+val validITEmployees: List[Employee] = List(Employee(101,John,IT,Some(50000.0)), Employee(105,Alex,IT,Some(70000.0)))
+
+scala> val averageITSalary = validITEmployees.flatMap(_.salary).sum / validITEmployees.size
+val averageITSalary: Double = 60000.0
+
+scala> println("Valid employees: " + validEmployees.map(_.name).mkString(", "))
+Valid employees: John, David, Alex
+
+scala> println("Invalid employees: " + invalidEmployees.map(_.name).mkString(", "))
+Invalid employees: Smith, Peter
+
+scala> println("Valid IT employees: " + validITEmployees.map(_.name).mkString(", "))
+Valid IT employees: John, Alex
+
+scala> println("Average IT salary: " + averageITSalary.toLong)
+Average IT salary: 60000
+
+scala> results.foreach {
+     |   case (employee, Right(salary)) => println(employee.name + ": Valid salary " + salary)
+     |   case (employee, Left(error)) => println(employee.name + ": " + error)
+     | }
+John: Valid salary 50000.0
+David: Valid salary 30000.0
+Smith: Salary is missing
+Peter: Invalid salary
+Alex: Valid salary 70000.0
+
+
+scala> case class Order(orderId: Int, customerName: String, amount: Option[Double], status: String)
+defined class Order
+
+scala> val orders = List(
+     |   Order(1, "John", Some(2500), "COMPLETED"),
+     |   Order(2, "David", Some(1500), "PENDING"),
+     |   Order(3, "Smith", None, "COMPLETED"),
+     |   Order(4, "Peter", Some(-500), "FAILED"),
+     |   Order(5, "Alex", Some(4000), "COMPLETED")
+     | )
+val orders: List[Order] = List(Order(1,John,Some(2500.0),COMPLETED), Order(2,David,Some(1500.0),PENDING), Order(3,Smith,None,COMPLETED), Order(4,Peter,Some(-500.0),FAILED), Order(5,Alex,Some(4000.0),COMPLETED))
+
+scala> def validateOrderAmount(order: Order): Either[String, Double] = {
+     |   order.amount match {
+     |     case Some(amount) if amount > 0 => Right(amount)
+     |     case Some(_) => Left("Amount must be greater than zero")
+     |     case None => Left("Order amount is missing")
+     |   }
+     | }
+def validateOrderAmount(order: Order): Either[String,Double]
+
+scala> val orderResults = orders.map(o => (o, validateOrderAmount(o)))
+val orderResults: List[(Order, Either[String,Double])] = ...
+
+scala> val completedValidOrders = orderResults.collect {
+     |   case (order, Right(amount)) if order.status == "COMPLETED" => (order.orderId, amount)
+     | }
+val completedValidOrders: List[(Int, Double)] = List((1,2500.0), (5,4000.0))
+
+scala> val pendingOrders = orders.collect {
+     |   case Order(id, name, amount, "PENDING") => id
+     | }
+val pendingOrders: List[Int] = List(2)
+
+scala> val invalidOrders = orderResults.collect {
+     |   case (order, Left(_)) => order.orderId
+     | }
+val invalidOrders: List[Int] = List(3, 4)
+
+scala> val completedTotal = completedValidOrders.map(_._2).sum
+val completedTotal: Double = 6500.0
+
+scala> println("Completed valid orders: " + completedValidOrders.map(_._1).mkString(", "))
+Completed valid orders: 1, 5
+
+scala> println("Pending orders: " + pendingOrders.mkString(", "))
+Pending orders: 2
+
+scala> println("Invalid orders: " + invalidOrders.mkString(", "))
+Invalid orders: 3, 4
+
+scala> println("Total completed order amount: " + completedTotal.toLong)
+Total completed order amount: 6500
+
+scala> println("Valid orders with amounts: " + completedValidOrders.mkString(", "))
+Valid orders with amounts: (1,2500.0), (5,4000.0)
+
+
+scala> case class Subject(name: String, marks: Option[Int])
+defined class Subject
+
+scala> case class Student(id: Int, name: String, subjects: List[Subject])
+defined class Student
+
+scala> val students = List(
+     |   Student(1, "John", List(Subject("Maths", Some(80)), Subject("Science", Some(75)), Subject("English", Some(85)))),
+     |   Student(2, "David", List(Subject("Maths", Some(60)), Subject("Science", Some(55)), Subject("English", Some(65)))),
+     |   Student(3, "Smith", List(Subject("Maths", Some(90)), Subject("Science", None), Subject("English", Some(80)))),
+     |   Student(4, "Peter", List(Subject("Maths", Some(70)), Subject("Science", Some(72)), Subject("English", Some(68)))),
+     |   Student(5, "Alex", List(Subject("Maths", Some(95)), Subject("Science", Some(92)), Subject("English", Some(90))))
+     | )
+val students: List[Student] = ...
+
+scala> def validateMarks(subject: Subject): Either[String, Int] = {
+     |   subject.marks match {
+     |     case Some(mark) if mark >= 0 && mark <= 100 => Right(mark)
+     |     case Some(_) => Left("Marks are out of range")
+     |     case None => Left("Marks are missing")
+     |   }
+     | }
+def validateMarks(subject: Subject): Either[String,Int]
+
+scala> val studentTotals = students.map { student =>
+     |   val marks = student.subjects.flatMap(_.marks)
+     |   (student, marks.sum, marks.size == student.subjects.size)
+     | }
+val studentTotals: List[(Student, Int, Boolean)] = ...
+
+scala> studentTotals.foreach {
+     |   case (Student(id, name, subjects), total, complete) =>
+     |     println(name + " total marks: " + total + ", complete: " + complete)
+     | }
+John total marks: 240, complete: true
+David total marks: 180, complete: true
+Smith total marks: 170, complete: false
+Peter total marks: 210, complete: true
+Alex total marks: 277, complete: true
+
+scala> val passedStudents = studentTotals.filter {
+     |   case (student, total, complete) => complete && total.toDouble / (student.subjects.size * 100) * 100 >= 50
+     | }
+val passedStudents: List[(Student, Int, Boolean)] = ...
+
+scala> println("Students who passed: " + passedStudents.map(_._1.name).mkString(", "))
+Students who passed: John, David, Peter, Alex
+
+scala> val incompleteStudents = studentTotals.filter(!_._3)
+val incompleteStudents: List[(Student, Int, Boolean)] = ...
+
+scala> println("Students with incomplete assessments: " + incompleteStudents.map(_._1.name).mkString(", "))
+Students with incomplete assessments: Smith
+
+scala> val distinctionStudents = studentTotals.filter {
+     |   case (student, total, complete) => complete && total.toDouble / (student.subjects.size * 100) >= 0.75
+     | }
+val distinctionStudents: List[(Student, Int, Boolean)] = ...
+
+scala> println("Students with distinction: " + distinctionStudents.map(_._1.name).mkString(", "))
+Students with distinction: John, Alex
+
+scala> val studentValidation = students.map { student =>
+     |   val validation = student.subjects.map(validateMarks)
+     |   (student.name, validation)
+     | }
+val studentValidation: List[(String, List[Either[String,Int]])] = ...
+
+scala> studentValidation.foreach {
+     |   case (name, results) =>
+     |     println(name + ": " + results)
+     | }
+John: List(Right(80), Right(75), Right(85))
+David: List(Right(60), Right(55), Right(65))
+Smith: List(Right(90), Left(Marks are missing), Right(80))
+Peter: List(Right(70), Right(72), Right(68))
+Alex: List(Right(95), Right(92), Right(90))
+
+
+scala> case class Customer(id: Option[Int], name: Option[String], age: Option[Int], email: Option[String])
+defined class Customer
+
+scala> val customerRecords = List(
+     |   Customer(Some(1), Some("John"), Some(25), Some("john@gmail.com")),
+     |   Customer(Some(2), Some("David"), Some(17), Some("david@gmail.com")),
+     |   Customer(Some(3), Some(""), Some(30), Some("smith@gmail.com")),
+     |   Customer(None, Some("Peter"), Some(40), Some("peter@gmail.com")),
+     |   Customer(Some(5), Some("Alex"), Some(35), Some("alexgmail.com")),
+     |   Customer(Some(6), Some("Mary"), Some(28), Some("mary@gmail.com")),
+     |   Customer(Some(-7), Some("Sam"), Some(22), Some("sam@gmail.com"))
+     | )
+val customerRecords: List[Customer] = ...
+
+scala> def validateCustomer(customer: Customer): Either[String, Customer] = {
+     |   customer match {
+     |     case Customer(Some(id), Some(name), Some(age), Some(email))
+     |       if id > 0 && name.trim.nonEmpty && age >= 18 && age <= 100 && email.contains("@") =>
+     |         Right(customer)
+     |     case Customer(None, _, _, _) => Left("Customer ID is missing")
+     |     case Customer(Some(id), _, _, _) if id <= 0 => Left("Customer ID must be positive")
+     |     case Customer(_, None, _, _) => Left("Name is missing")
+     |     case Customer(_, Some(name), _, _) if name.trim.isEmpty => Left("Name must not be empty")
+     |     case Customer(_, _, None, _) => Left("Age is missing")
+     |     case Customer(_, _, Some(age), _) if age < 18 || age > 100 => Left("Age must be between 18 and 100")
+     |     case Customer(_, _, _, None) => Left("Email is missing")
+     |     case Customer(_, _, _, Some(email)) if !email.contains("@") => Left("Email must contain @")
+     |   }
+     | }
+def validateCustomer(customer: Customer): Either[String,Customer]
+
+scala> val customerResults = customerRecords.map(customer => (customer, validateCustomer(customer)))
+val customerResults: List[(Customer, Either[String,Customer])] = ...
+
+scala> val validCustomers = customerResults.collect {
+     |   case (customer, Right(_)) => customer
+     | }
+val validCustomers: List[Customer] = List(Customer(Some(1),Some(John),Some(25),Some(john@gmail.com)), Customer(Some(6),Some(Mary),Some(28),Some(mary@gmail.com)))
+
+scala> val rejectedCustomers = customerResults.collect {
+     |   case (customer, Left(error)) => (customer, error)
+     | }
+val rejectedCustomers: List[(Customer, String)] = ...
+
+scala> println("Total records received: " + customerRecords.size)
+Total records received: 7
+
+scala> println("Valid customer count: " + validCustomers.size)
+Valid customer count: 2
+
+scala> println("Rejected customer count: " + rejectedCustomers.size)
+Rejected customer count: 5
+
+scala> println("Valid customer details:")
+Valid customer details:
+
+scala> validCustomers.foreach(println)
+Customer(Some(1),Some(John),Some(25),Some(john@gmail.com))
+Customer(Some(6),Some(Mary),Some(28),Some(mary@gmail.com))
+
+scala> println("Rejected records with error reasons:")
+Rejected records with error reasons:
+
+scala> rejectedCustomers.foreach {
+     |   case (customer, error) => println(customer + " -> " + error)
+     | }
+Customer(Some(2),Some(David),Some(17),Some(david@gmail.com)) -> Age must be between 18 and 100
+Customer(Some(3),Some(),Some(30),Some(smith@gmail.com)) -> Name must not be empty
+Customer(None,Some(Peter),Some(40),Some(peter@gmail.com)) -> Customer ID is missing
+Customer(Some(5),Some(Alex),Some(35),Some(alexgmail.com)) -> Email must contain @
+Customer(Some(-7),Some(Sam),Some(22),Some(sam@gmail.com)) -> Customer ID must be positive

@@ -1,0 +1,565 @@
+
+Introduction to Scala & Basics | OOP and Classes in Scala
+
+
+
+SECTION A - INTRODUCTION TO SCALA & BASICS
+
+
+PROBLEM 1: SCALA INTERPRETER AND REPL
+scala> val a = 20
+a: Int = 20
+
+scala> val b = 10
+b: Int = 10
+
+scala> a + b
+res0: Int = 30
+
+scala> a - b
+res1: Int = 10
+
+scala> a * b
+res2: Int = 200
+
+scala> a / b
+res3: Int = 2
+
+scala> val name = "Shanmukha Aarya Sree"
+name: String = Shanmukha Aarya Sree
+
+scala> println(s"Hello, $name! Welcome to Scala.")
+Hello, Shanmukha Aarya Sree! Welcome to Scala.
+
+scala> def add(x: Int, y: Int): Int = x + y
+add: (x: Int, y: Int)Int
+
+scala> add(15, 25)
+res4: Int = 40
+
+
+PROBLEM 2: VARIABLES - val vs var AND STRINGS
+
+
+object StudentDetails {
+  def main(args: Array[String]): Unit = {
+    val name = "Shanmukha Aarya Sree"
+    val course = "Artificial Intelligence and Data Science"
+
+    var age = 21
+    var fee = 85000.0
+
+    // Updating mutable variables
+    age = 22
+    fee = 90000.0
+
+    println(s"Student Name: $name")
+    println(s"Course: $course")
+    println(s"Age: $age")
+    println(s"Fee: $fee")
+
+    // name = "Ravi" // Invalid: val is immutable and cannot be reassigned.
+  }
+}
+
+Explanation:
+- Reassigning name is invalid because name was declared using val, and a val cannot be reassigned after initialization.
+
+
+PROBLEM 3: DATA TYPES AND TYPE CONVERSIONS
+
+
+object ProductDetails {
+  def main(args: Array[String]): Unit = {
+    val productName: String = "Laptop"
+    val quantity: Int = 3
+    val price: Double = 45000.50
+    val available: Boolean = true
+    val categoryCode: Char = 'A'
+
+    val totalPrice: Double = quantity * price
+
+    println(s"Product Name: $productName")
+    println(s"Quantity: $quantity")
+    println(s"Price: $price")
+    println(s"Available: $available")
+    println(s"Category Code: $categoryCode")
+    println(s"Total Price: $totalPrice")
+
+    val number: Int = 25
+    val numberAsDouble: Double = number.toDouble
+
+    val decimal: Double = 45.78
+    val decimalAsInt: Int = decimal.toInt
+
+    println(s"Original Int: $number")
+    println(s"Int converted to Double: $numberAsDouble")
+    println(s"Original Double: $decimal")
+    println(s"Double converted to Int: $decimalAsInt")
+  }
+}
+
+Explanation:
+- Choosing the correct data type matters because it helps represent data accurately and supports appropriate operations. For example, Double is suitable for prices with decimal values.
+
+
+PROBLEM 4: OPERATORS
+
+
+object SimpleCalculator {
+  def main(args: Array[String]): Unit = {
+    val a = 20
+    val b = 6
+
+    println(s"Addition: ${a + b}")
+    println(s"Subtraction: ${a - b}")
+    println(s"Multiplication: ${a * b}")
+
+    if (b != 0) {
+      println(s"Division: ${a / b}")
+      println(s"Remainder: ${a % b}")
+    } else {
+      println("Division and remainder are not possible because the second number is zero.")
+    }
+
+    println(s"First number greater than second: ${a > b}")
+    println(s"First number less than second: ${a < b}")
+    println(s"Numbers are equal: ${a == b}")
+
+    println(s"Both numbers are positive: ${a > 0 && b > 0}")
+    println(s"At least one number is even: ${a % 2 == 0 || b % 2 == 0}")
+  }
+}
+PROBLEM 5: CONDITIONAL AND CONTROL STATEMENTS
+
+
+object StudentResult {
+  def printResult(mark1: Int, mark2: Int, mark3: Int): Unit = {
+    val total = mark1 + mark2 + mark3
+    val average = total / 3.0
+
+    println(s"Marks: $mark1, $mark2, $mark3")
+    println(s"Total: $total")
+    println(s"Average: $average")
+
+    // Grade boundaries:
+    // A: average >= 80
+    // B: average >= 70 and < 80
+    // C: average >= 60 and < 70
+    // D: average >= 50 and < 60
+    // F: average < 50
+    if (average >= 80) {
+      println("Grade: A")
+    } else if (average >= 70) {
+      println("Grade: B")
+    } else if (average >= 60) {
+      println("Grade: C")
+    } else if (average >= 50) {
+      println("Grade: D")
+    } else {
+      println("Grade: F")
+    }
+
+    // Pass requires at least 35 marks in every subject.
+    if (mark1 >= 35 && mark2 >= 35 && mark3 >= 35) {
+      println("Result: Pass")
+    } else {
+      println("Result: Fail")
+    }
+    println("--------------------------------")
+  }
+
+  def main(args: Array[String]): Unit = {
+    printResult(85, 90, 80)
+    printResult(70, 65, 75)
+    printResult(80, 30, 75)
+
+    println("For loop: numbers from 1 to 10")
+    for (i <- 1 to 10) {
+      print(s"$i ")
+    }
+    println()
+
+    println("While loop: first five positive integers")
+    var i = 1
+    while (i <= 5) {
+      print(s"$i ")
+      i += 1
+    }
+    println()
+  }
+}
+
+test outcomes:
+1. 85, 90, 80 -> average 85.0, Grade A, Pass.
+2. 70, 65, 75 -> average 70.0, Grade B, Pass.
+3. 80, 30, 75 -> average about 61.67, Grade C, Fail (one subject is below 35).
+
+
+SECTION B - OOP AND CLASSES IN SCALA
+
+
+PROBLEM 1: CLASSES AND OBJECTS
+
+
+class Book(val title: String, val author: String, val price: Double) {
+  def displayDetails(): Unit = {
+    println(s"Title: $title")
+    println(s"Author: $author")
+    println(s"Price: $price")
+    println("----------------------")
+  }
+}
+
+object BookApplication {
+  def main(args: Array[String]): Unit = {
+    val book1 = new Book("Wings of Fire", "A. P. J. Abdul Kalam", 350.0)
+    val book2 = new Book("The Alchemist", "Paulo Coelho", 299.0)
+
+    book1.displayDetails()
+    book2.displayDetails()
+  }
+}
+
+Explanation:
+- A class is a blueprint that defines fields and methods.
+- An object is an instance of a class. Each Book object has its own title, author and price.
+- Here, Book is the class and book1/book2 are objects.
+
+
+PROBLEM 2: IMPLICIT CLASSES
+
+
+object ImplicitClassExample {
+  implicit class RichInt(val value: Int) {
+    def square(): Int = value * value
+  }
+
+  def main(args: Array[String]): Unit = {
+    println(s"Square of 4: ${4.square()}")
+    println(s"Square of 7: ${7.square()}")
+  }
+}
+
+Explanation:
+- RichInt is an implicit class defined inside an enclosing object.
+- It adds the square() method to Int values without changing Scala's Int type.
+- When 4.square() is called, Scala makes the RichInt method available through an
+  implicit conversion.
+- This syntax is for Scala 2. In Scala 3, extension methods are commonly used.
+
+
+PROBLEM 3: PRIMARY AND AUXILIARY CONSTRUCTORS
+
+
+class Student(val name: String, val age: Int) {
+  // Auxiliary constructor accepting only name
+  def this(name: String) = this(name, 18)
+
+  // Auxiliary constructor accepting no arguments
+  def this() = this("Unknown", 18)
+
+  def displayDetails(): Unit = {
+    println(s"Name: $name, Age: $age")
+  }
+}
+
+object StudentConstructorDemo {
+  def main(args: Array[String]): Unit = {
+    val student1 = new Student("Ravi", 21)
+    val student2 = new Student("Kumar")
+    val student3 = new Student()
+
+    student1.displayDetails()
+    student2.displayDetails()
+    student3.displayDetails()
+  }
+}
+
+Explanation:
+- The primary constructor is declared in the class definition:
+  Student(val name: String, val age: Int).
+- An auxiliary constructor is declared using def this(...).
+- Every auxiliary constructor must call another constructor of the same class.
+- The name-only constructor uses the default age 18. The no-argument constructor
+  uses the default name "Unknown" and age 18.
+
+
+PROBLEM 4: INHERITANCE AND POLYMORPHISM
+
+
+class Employee(val name: String, val salary: Double) {
+  def displayDetails(): Unit = {
+    println(s"Name: $name, Salary: $salary")
+  }
+
+  def workDescription(): Unit = {
+    println("Employee performs assigned work.")
+  }
+}
+
+class Manager(name: String, salary: Double, val teamSize: Int)
+  extends Employee(name, salary) {
+
+  override def workDescription(): Unit = {
+    println(s"$name manages a team of $teamSize employees.")
+  }
+}
+
+class Developer(name: String, salary: Double, val programmingLanguage: String)
+  extends Employee(name, salary) {
+
+  override def workDescription(): Unit = {
+    println(s"$name develops software using $programmingLanguage.")
+  }
+}
+
+object EmployeePolymorphismDemo {
+  def main(args: Array[String]): Unit = {
+    val employees: List[Employee] = List(
+      new Manager("Ravi", 80000.0, 5),
+      new Developer("Kumar", 60000.0, "Scala")
+    )
+
+    employees.foreach { employee =>
+      employee.displayDetails()
+      employee.workDescription()
+      println("----------------------")
+    }
+  }
+}
+
+
+PROBLEM 5: SINGLETON AND COMPANION OBJECTS
+
+class Employee private (val name: String, val salary: Double) {
+  def displayDetails(): Unit = {
+    println(s"Employee Name: $name")
+    println(s"Salary: $salary")
+  }
+}
+
+object Employee {
+  def create(name: String, salary: Double): Employee = {
+    require(name != null && name.trim.nonEmpty, "Employee name cannot be empty.")
+    require(salary > 0, "Salary must be positive.")
+
+    new Employee(name.trim, salary)
+  }
+}
+
+object ApplicationConfig {
+  val applicationName = "Employee Management System"
+
+  def displayApplicationName(): Unit = {
+    println(s"Application Name: $applicationName")
+  }
+}
+
+object EmployeeFactoryDemo {
+  def main(args: Array[String]): Unit = {
+    val employee = Employee.create("Ravi", 50000.0)
+    employee.displayDetails()
+
+    ApplicationConfig.displayApplicationName()
+
+    // These calls are rejected by validation:
+    // Employee.create("", 50000.0)
+    // Employee.create("Kumar", 0.0)
+  }
+}
+
+Explanation:
+- A normal class defines the structure and behavior of objects. Multiple instances can
+  be created from it.
+- A companion object has the same name as its class and is defined in the same file.
+  It can access the class's private constructor. Here it provides the create() factory
+  method and validates input.
+- A singleton object is a single instance. ApplicationConfig stores application-wide
+  configuration and can be accessed directly using its object name.
+- require(condition, message) throws an IllegalArgumentException when the condition
+  is false.
+
+PROBLEM 6: OBJECT EQUALITY - ==, eq, equals AND hashCode
+
+class Point(val x: Int, val y: Int) {
+  override def equals(other: Any): Boolean = {
+    other match {
+      case that: Point =>
+        this.x == that.x && this.y == that.y
+      case _ =>
+        false
+    }
+  }
+
+  override def hashCode(): Int = {
+    31 * x + y
+  }
+
+  override def toString: String = s"Point($x, $y)"
+}
+
+case class PointValue(x: Int, y: Int)
+
+object PointEqualityDemo {
+  def main(args: Array[String]): Unit = {
+    val p1 = new Point(10, 20)
+    val p2 = new Point(10, 20)
+
+    println(s"p1 == p2: ${p1 == p2}")
+    println(s"p1 eq p2: ${p1 eq p2}")
+
+    val points = Set(p1, p2)
+    println(s"Set size: ${points.size}")
+    println(points)
+
+    val value1 = PointValue(5, 8)
+    val value2 = PointValue(5, 8)
+
+    println(s"Case class values equal: ${value1 == value2}")
+  }
+}
+
+Explanation:
+- == checks value equality by calling equals() (with null-safe behavior).
+- eq checks whether two references point to the exact same object.
+- p1 and p2 have equal coordinates, so p1 == p2 is true.
+- They are separately created objects, so p1 eq p2 is false.
+- Set uses equals() and hashCode() to identify duplicates. Since both Points have
+  equal values and the same hash code, the Set size is 1.
+- A case class automatically provides value-based equals() and hashCode().
+
+------------------------------------------------------------
+PROBLEM 7: val AND var MEMBERS, GETTERS AND SETTERS
+
+------------------------------------------------------------
+
+class Temperature(initialCelsius: Double) {
+  private var _c: Double = {
+    require(initialCelsius >= -273.15, "Temperature cannot be below absolute zero.")
+    initialCelsius
+  }
+
+  def celsius: Double = _c
+
+  def celsius_=(value: Double): Unit = {
+    require(value >= -273.15, "Temperature cannot be below absolute zero.")
+    _c = value
+  }
+}
+
+object TemperatureDemo {
+  def main(args: Array[String]): Unit = {
+    val temperature = new Temperature(25.0)
+
+    println(s"Initial temperature: ${temperature.celsius} Celsius")
+
+    temperature.celsius = 30.5
+
+    println(s"Updated temperature: ${temperature.celsius} Celsius")
+
+ 
+    // temperature.celsius = -300.0
+  }
+}
+
+Explanation:
+- _c is private, so code outside the class cannot directly change the stored value.
+- The getter celsius returns the current value.
+- The setter celsius_= updates the value after validating it.
+- Scala allows property-like syntax: temperature.celsius reads the getter and
+  temperature.celsius = 30.5 calls the setter.
+- The minimum valid Celsius temperature is -273.15.
+
+OPTIONAL MINI PROJECT - EMPLOYEE MANAGEMENT
+
+
+
+class StaffMember private (
+  val name: String,
+  val employeeId: Int,
+  private var _salary: Double
+) 
+{
+  def salary: Double = _salary
+
+  def salary_=(newSalary: Double): Unit = {
+    require(newSalary > 0, "Salary must be positive.")
+    _salary = newSalary
+  }
+
+  def displayDetails(): Unit = {
+    println(s"ID: $employeeId, Name: $name, Salary: $_salary")
+  }
+
+  def workDescription(): String = "Performs employee duties."
+
+  override def equals(other: Any): Boolean = {
+    other match {
+      case that: StaffMember => this.employeeId == that.employeeId
+      case _ => false
+    }
+  }
+
+  override def hashCode(): Int = employeeId.hashCode
+}
+
+object StaffMember {
+  def create(name: String, employeeId: Int, salary: Double): StaffMember = {
+    require(name != null && name.trim.nonEmpty, "Name cannot be empty.")
+    require(employeeId > 0, "Employee ID must be positive.")
+    require(salary > 0, "Salary must be positive.")
+
+    new StaffMember(name.trim, employeeId, salary)
+  }
+}
+
+class Manager(
+  name: String,
+  employeeId: Int,
+  salary: Double,
+  val teamSize: Int
+) extends StaffMember(name, employeeId, salary) {
+
+  override def workDescription(): String = {
+    s"Manages a team of $teamSize employees."
+  }
+}
+
+class Developer(
+  name: String,
+  employeeId: Int,
+  salary: Double,
+  val language: String
+) extends StaffMember(name, employeeId, salary) {
+
+  override def workDescription(): String = {
+    s"Develops applications using $language."
+  }
+}
+
+object EmployeeManagementApp {
+  def main(args: Array[String]): Unit = {
+    val manager = new Manager("Ravi", 101, 80000.0, 5)
+    val developer = new Developer("Kumar", 102, 60000.0, "Scala")
+
+    val employees: List[StaffMember] = List(manager, developer)
+
+    println("EMPLOYEE DETAILS")
+    employees.foreach { employee =>
+      employee.displayDetails()
+      println(employee.workDescription())
+      println("----------------------")
+    }
+
+    // Update salary through the setter.
+    developer.salary = 65000.0
+    println(s"Updated developer salary: ${developer.salary}")
+
+    // Same employee ID means the records are considered equal.
+    val duplicate = StaffMember.create("Another Ravi", 101, 70000.0)
+    val uniqueEmployees = Set[StaffMember](manager, developer, duplicate)
+
+    println(s"Number of unique employees: ${uniqueEmployees.size}")
+  }
+}

@@ -1,0 +1,15 @@
+﻿+---+-------+-----------+--------+----------+---+-----------+---------+
+|id |name   |category   |quantity|unit_price|age|total_price|age_group|
++---+-------+-----------+--------+----------+---+-----------+---------+
+|1  |alice  |electronics|2       |29.99     |30 |59.98      |adult    |
+|2  |bob    |books      |1       |15.5      |25 |15.5       |adult    |
+|3  |charlie|electronics|3       |49.99     |70 |149.97     |senior   |
+|4  |diana  |clothing   |5       |12.0      |17 |60.0       |child    |
+|5  |eve    |books      |2       |22.0      |45 |44.0       |adult    |
+|6  |frank  |electronics|1       |99.99     |55 |99.99      |adult    |
+|7  |grace  |clothing   |4       |8.5       |12 |34.0       |child    |
+|8  |hank   |books      |3       |18.0      |60 |54.0       |adult    |
+|9  |ivy    |electronics|2       |35.0      |28 |70.0       |adult    |
+|10 |jack   |clothing   |1       |45.0      |38 |45.0       |adult    |
++---+-------+-----------+--------+----------+---+-----------+---------+
+Processed 10 rows; quality checks passed: true

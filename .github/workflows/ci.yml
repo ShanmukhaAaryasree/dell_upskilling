@@ -1,0 +1,57 @@
+name: Spark Testing Capstone CI
+
+on:
+  push:
+    branches:
+      - main
+      - "feature/**"
+      - "bugfix/**"
+      - "chore/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Format, test and assemble capstone
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: SparkTestingCapstone
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: sbt
+
+      - name: Set up sbt
+        uses: sbt/setup-sbt@v1
+
+      - name: Check formatting
+        run: sbt scalafmtCheckAll
+
+      - name: Check Scalafix rules
+        run: |
+          sbt scalafixAll
+          git diff --exit-code
+
+      - name: Run tests
+        run: sbt test
+
+      - name: Build assembly
+        run: sbt assembly
+
+      - name: Upload assembly artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: spark-testing-capstone-assembly
+          path: SparkTestingCapstone/target/scala-*/spark_testing_capstone-assembly-*.jar
+          if-no-files-found: error

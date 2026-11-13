@@ -1,4 +1,28 @@
-# Spark Typed Datasets
+# Dell Upskilling Spark Projects
+
+This repository contains several independent Scala and Apache Spark learning projects.
+
+## Projects
+
+- **Spark Typed Datasets** (repository root): demonstrates DataFrame and typed Dataset operations over employee data.
+- **Employee Spark Analysis** ([`Employee_Spark-Scala3`](Employee_Spark-Scala3/)): employee analysis with reusable Spark DataFrame transformations and a captured sample output.
+- **Spark Testing Capstone** ([`SparkTestingCapstone`](SparkTestingCapstone/)): a standalone Scala/Spark project with source code, tests, build configuration, and captured output in one folder. Its GitHub Actions workflow is at the repository-required root path, `.github/workflows/ci.yml`.
+
+## Spark Testing Capstone
+
+The batch pipeline validates required columns, filters invalid rows, normalizes text, derives totals and age groups, removes duplicate keys, and reports data-quality checks. Customer records can also be validated for required fields and a valid email address.
+
+See the [capstone README](SparkTestingCapstone/README.md) for requirements and commands. To run it from the repository root:
+
+```shell
+cd SparkTestingCapstone
+sbt run
+sbt test
+```
+
+The sample run output is available at [`SparkTestingCapstone/outputs/sample-run-output.txt`](SparkTestingCapstone/outputs/sample-run-output.txt).
+
+## Spark Typed Datasets
 
 A small Scala application that demonstrates the difference between Spark DataFrames and strongly typed Datasets using employee data.
 

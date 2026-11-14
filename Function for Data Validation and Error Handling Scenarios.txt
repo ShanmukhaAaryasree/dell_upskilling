@@ -1,0 +1,281 @@
+SCALA CANDIDATE VALIDATION – COMPLETE OUTPUTS AND EXPLANATIONS
+
+1. CREATING THE CANDIDATE CASE CLASS
+
+Code:
+case class Candidate(
+  name: String,
+  score: Option[Int]
+)
+
+Output:
+defined class Candidate
+
+Explanation:
+- Candidate is a case class with two fields.
+- name is a String.
+- score is Option[Int], so it can contain Some(score) or None.
+
+Examples:
+Candidate("John", Some(85))
+Candidate("Smith", None)
+
+
+2. FIRST ATTEMPT – getPassingCandidates ERROR
+
+Incorrect line:
+case Candidate(-, None) =>
+  None
+
+Error:
+<console>:31: error: not found: value -
+       case Candidate(-,None) =>
+                      ^
+
+Explanation:
+The minus sign (-) is an arithmetic operator, not a wildcard in pattern matching.
+Use underscore (_) to ignore a value.
+
+Correct line:
+case Candidate(_, None) =>
+  None
+
+
+3. SECOND ATTEMPT – DUPLICATE DEF ERROR
+
+Incorrect input:
+def getPassingCandidates(
+  def getPassingCandidates(
+
+Error:
+<console>:2: error: identifier expected but 'def' found.
+       def getPassingCandidates(
+       ^
+
+Explanation:
+A second method definition was accidentally typed inside the first method's parameter list. Scala expected a parameter declaration, not another def.
+
+
+4. CORRECT getPassingCandidates METHOD
+
+Code:
+def getPassingCandidates(
+  candidates: List[Candidate]
+): List[(String, Int)] = {
+
+  candidates.flatMap {
+
+    case Candidate(name, Some(score)) if score >= 60 =>
+      Some(name -> score)
+
+    case Candidate(_, Some(score)) =>
+      None
+
+    case Candidate(_, None) =>
+      None
+  }
+}
+
+Output:
+getPassingCandidates: (candidates: List[Candidate])List[(String, Int)]
+
+Example execution:
+getPassingCandidates(List(
+  Candidate("John", Some(85)),
+  Candidate("David", Some(45)),
+  Candidate("Smith", None)
+))
+
+Expected result:
+List((John,85))
+
+Explanation:
+- flatMap processes each candidate and combines the returned results.
+- Some(score) means a score is available.
+- score >= 60 checks whether the candidate passed.
+- name -> score creates a tuple, for example ("John", 85).
+- None excludes that candidate from the resulting list.
+- The underscore (_) ignores a field whose value is not needed.
+
+
+5. validateCandidate USING EITHER
+
+Code:
+def validateCandidate(
+  candidate: Candidate
+): Either[String, Int] = {
+
+  candidate match {
+    case Candidate(name, Some(score)) if score >= 60 =>
+      Right(score)
+
+    case Candidate(name, Some(score)) =>
+      Left(s"$name failed with score $score")
+
+    case Candidate(name, None) =>
+      Left(s"$name has no assessment score")
+  }
+}
+
+Output:
+validateCandidate: (candidate: Candidate)Either[String,Int]
+
+Explanation:
+Either[String, Int] represents one of two outcomes:
+- Right(value): successful validation; here it contains the score.
+- Left(error): unsuccessful validation; here it contains an error message.
+
+Cases:
+1. Score is 60 or above: Right(score).
+2. Score is below 60: Left with a failure message.
+3. Score is missing: Left with a missing-score message.
+
+
+6. CREATING CANDIDATES AND VALIDATING THEM
+
+Code:
+val candidates = List(
+  Candidate("John", Some(85)),
+  Candidate("David", Some(45)),
+  Candidate("Smith", None)
+)
+
+val results = candidates.map(validateCandidate)
+
+results.foreach {
+  case Right(score) =>
+    println(s"Valid score: $score")
+
+  case Left(error) =>
+    println(s"Error: $error")
+}
+
+Actual printed output:
+Valid score: 85
+Error: David failed with score 45
+Error: Smith has no assessment score
+
+Scala REPL values:
+candidates: List[Candidate] = List(Candidate(John,Some(85)), Candidate(David,Some(45)), Candidate(Smith,None))
+
+results: List[Either[String,Int]] = List(Right(85), Left(David failed with score 45), Left(Smith has no assessment score))
+
+Explanation:
+- List(...) creates three Candidate objects.
+- map(validateCandidate) applies the validation function to every candidate and creates a new list of results.
+- foreach iterates through the results.
+- Right(score) prints a valid score.
+- Left(error) prints the corresponding error message.
+
+
+7. COMPLETE PROGRAM USING AN OBJECT
+
+Code:
+case class Candidate(
+  name: String,
+  score: Option[Int]
+)
+
+object CandidateValidation {
+
+  def validateCandidate(
+    candidate: Candidate
+  ): Either[String, Int] = {
+
+    candidate match {
+
+      case Candidate(name, Some(score))
+          if score >= 60 =>
+        Right(score)
+
+      case Candidate(name, Some(score)) =>
+        Left(s"$name failed with score $score")
+
+      case Candidate(name, None) =>
+        Left(s"$name has no assessment score")
+    }
+  }
+
+  def main(args: Array[String]): Unit = {
+
+    val c1 = Candidate("Raj", Some(85))
+    val c2 = Candidate("John", Some(45))
+    val c3 = Candidate("David", None)
+
+    println(validateCandidate(c1))
+    println(validateCandidate(c2))
+    println(validateCandidate(c3))
+  }
+}
+
+Output after defining the program:
+defined class Candidate
+defined object CandidateValidation
+
+Command to execute:
+CandidateValidation.main(Array())
+
+Actual output:
+Right(85)
+Left(John failed with score 45)
+Left(David has no assessment score)
+
+Explanation:
+- Candidate is the case class.
+- CandidateValidation is a singleton object.
+- validateCandidate contains the validation logic.
+- main is the program entry-point method.
+- CandidateValidation.main(Array()) calls main with an empty array of command-line arguments.
+
+
+QUICK REVISION – IMPORTANT SCALA CONCEPTS
+
+1. case class:
+A class designed for data modelling. Scala automatically provides useful methods such as apply, unapply, equals, hashCode and toString.
+
+2. Option:
+Represents an optional value.
+- Some(value): a value exists.
+- None: no value exists.
+
+3. Pattern matching:
+Checks a value against patterns and executes the matching case.
+
+4. Guard:
+An additional condition written with if in a case clause.
+Example:
+case Candidate(name, Some(score)) if score >= 60 => ...
+
+5. Wildcard:
+The underscore (_) ignores a value in a pattern.
+
+6. flatMap:
+Transforms each element and flattens the results. In this example, returning None removes a candidate from the output.
+
+7. Tuple:
+name -> score is shorthand for (name, score).
+
+8. Either:
+Represents one of two possible outcomes.
+- Right is used here for success.
+- Left is used here for validation errors.
+
+9. map:
+Applies a function to every element and returns a new collection.
+
+10. foreach:
+Runs an operation for every element, here printing each result.
+
+11. Singleton object:
+An object definition creates a single instance. Methods can be called using the object name.
+
+12. main method:
+The entry point used here to run the complete program.
+
+IMPORTANT DIFFERENCE BETWEEN THE TWO FUNCTIONS
+
+getPassingCandidates:
+Returns only passing candidates as List[(String, Int)]. Failed and missing-score candidates are excluded.
+
+validateCandidate:
+Returns a result for every candidate as Either[String, Int]. Passing candidates produce Right; failed or missing-score candidates produce Left.

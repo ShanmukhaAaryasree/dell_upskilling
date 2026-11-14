@@ -1,16 +1,16 @@
 
-============================================================
+
 STEP 1: IMPORT SPARK FUNCTIONS AND IMPLICITS
-============================================================
+
 
 scala> import org.apache.spark.sql.functions._
 
 scala> import spark.implicits._
 
 
-============================================================
+
 STEP 2: CREATE DEPARTMENT CASE CLASS
-============================================================
+
 
 scala> case class Department(
      |   dept_id: Int,
@@ -19,9 +19,8 @@ scala> case class Department(
      | )
 
 
-============================================================
 STEP 3: CREATE EMPLOYEE CASE CLASS
-============================================================
+
 
 scala> case class Employee(
      |   emp_id: Int,
@@ -34,9 +33,9 @@ scala> case class Employee(
      | )
 
 
-============================================================
+
 STEP 4: CREATE DEPARTMENT SEQUENCE
-============================================================
+
 
 scala> val deptSeq = Seq(
      |   Department(10, "Engineering", "New York"),
@@ -47,9 +46,8 @@ scala> val deptSeq = Seq(
      | )
 
 
-============================================================
 STEP 5: CREATE EMPLOYEE SEQUENCE
-============================================================
+
 
 scala> val empSeq = Seq(
      |   Employee(101, "Alice Johnson", 10, 95000.0, "2020-01-15", None, """[{"skill":"Scala","level":"Expert"},{"skill":"Spark","level":"Advanced"}]"""),
@@ -65,27 +63,26 @@ scala> val empSeq = Seq(
      | )
 
 
-============================================================
+
 STEP 6: CREATE DEPARTMENTS AND EMPLOYEES DATAFRAMES
-============================================================
+
 
 scala> val departments = deptSeq.toDF()
 
 scala> val employees = empSeq.toDF()
 
 
-============================================================
+
 STEP 7: CREATE TEMPORARY VIEWS
-============================================================
+
 
 scala> departments.createOrReplaceTempView("departments")
 
 scala> employees.createOrReplaceTempView("employees")
 
 
-============================================================
 STEP 8: DISPLAY SETUP DATA
-============================================================
+
 
 scala> println("Setup complete – temp views ready")
 
@@ -121,9 +118,8 @@ scala> spark.sql("SELECT emp_id, name, dept_id, salary FROM employees").show()
 +------+-------------+-------+-------+
 
 
-============================================================
 STEP 9: EXERCISE 2.1 – BASIC SELECT
-============================================================
+
 
 scala> spark.sql("""
      | SELECT emp_id, name, salary
@@ -142,9 +138,8 @@ scala> spark.sql("""
 +------+-------------+-------+
 
 
-============================================================
 STEP 10: EXERCISE 2.2 – AGGREGATE
-============================================================
+
 
 scala> spark.sql("""
      | SELECT dept_id,
@@ -166,9 +161,8 @@ scala> spark.sql("""
 +-------+----------+---------+
 
 
-============================================================
 STEP 11: EXERCISE 3.1 – CREATE DATABASE AND USE
-============================================================
+
 
 scala> spark.sql("CREATE DATABASE IF NOT EXISTS hr_db")
 
@@ -183,9 +177,9 @@ scala> spark.sql("SELECT current_database()").show()
 +----------------+
 
 
-============================================================
+
 STEP 12: EXERCISE 3.2 – CREATE TEMPORARY VIEW
-============================================================
+
 
 scala> spark.sql("""
      | CREATE OR REPLACE TEMPORARY VIEW high_earners AS
@@ -206,9 +200,9 @@ scala> spark.sql("SELECT * FROM high_earners ORDER BY salary DESC").show()
 +------+-------------+-------+-------+
 
 
-============================================================
+
 STEP 13: EXERCISE 3.3 – GLOBAL TEMPORARY VIEW
-============================================================
+
 
 scala> spark.sql("""
      | CREATE OR REPLACE GLOBAL TEMPORARY VIEW eng_employees AS
@@ -230,9 +224,9 @@ scala> spark.sql("SELECT * FROM global_temp.eng_employees").show()
 +------+-------------+-------+
 
 
-============================================================
+
 STEP 14: EXERCISE 4.1 – SINGLE CTE
-============================================================
+
 
 scala> spark.sql("""
      | WITH dept_payroll AS (
@@ -257,9 +251,8 @@ scala> spark.sql("""
 +-----------+-------------+
 
 
-============================================================
 STEP 15: EXERCISE 4.2 – MULTIPLE CTEs
-============================================================
+
 
 scala> spark.sql("""
      | WITH company_avg AS (
@@ -288,9 +281,8 @@ scala> spark.sql("""
 +-------------+-------+--------+
 
 
-============================================================
+
 STEP 16: EXERCISE 5.1 – INNER JOIN
-============================================================
 
 scala> spark.sql("""
      | SELECT e.emp_id, e.name, e.salary,
@@ -316,9 +308,9 @@ scala> spark.sql("""
 +------+-------------+-------+-----------+--------+
 
 
-============================================================
+
 STEP 17: EXERCISE 5.2 – LEFT JOIN
-============================================================
+
 
 scala> spark.sql("""
      | SELECT d.dept_id, d.dept_name, e.emp_id, e.name
@@ -343,9 +335,9 @@ scala> spark.sql("""
 +-------+-----------+------+-------------+
 
 
-============================================================
+
 STEP 18: EXERCISE 5.3 – FULL OUTER JOIN
-============================================================
+
 
 scala> spark.sql("""
      | WITH bonus_eligible AS (
@@ -380,9 +372,9 @@ scala> spark.sql("""
 +------+-------------+----------+
 
 
-============================================================
+
 STEP 19: EXERCISE 5.4 – SELF JOIN (MANAGER HIERARCHY)
-============================================================
+
 
 scala> spark.sql("""
      | SELECT e.emp_id,
@@ -409,9 +401,8 @@ scala> spark.sql("""
 +------+-------------+-------------+
 
 
-============================================================
 STEP 20: EXERCISE 6.1 – ROW_NUMBER, RANK, DENSE_RANK
-============================================================
+
 
 scala> spark.sql("""
      | SELECT name, dept_id, salary,
@@ -444,9 +435,9 @@ scala> spark.sql("""
 +-------------+-------+-------+---+---+----+
 
 
-============================================================
+
 STEP 21: EXERCISE 6.2 – LAG AND LEAD
-============================================================
+
 
 scala> spark.sql("""
      | SELECT dept_id, name, hire_date, salary,
@@ -476,9 +467,7 @@ scala> spark.sql("""
 +-------+-------------+----------+-------+-----------+-----------+
 
 
-============================================================
 STEP 22: EXERCISE 6.3 – RUNNING TOTAL / CUMULATIVE SUM
-============================================================
 
 scala> spark.sql("""
      | SELECT dept_id, name, hire_date, salary,
@@ -507,9 +496,9 @@ scala> spark.sql("""
 +-------+-------------+----------+-------+--------------+
 
 
-============================================================
+
 STEP 23: PREREQUISITE – PARSE SKILLS_JSON
-============================================================
+
 
 scala> spark.sql("""
      | CREATE OR REPLACE TEMPORARY VIEW emp_skills AS
@@ -539,9 +528,9 @@ scala> spark.sql("SELECT emp_id, name, skills FROM emp_skills").show(false)
 +------+-------------+------------------------------------------------------+
 
 
-============================================================
+
 STEP 24: EXERCISE 7.1 – TRANSFORM
-============================================================
+
 
 scala> spark.sql("""
      | SELECT emp_id, name,
@@ -565,9 +554,8 @@ scala> spark.sql("""
 +------+-------------+--------------------------------+
 
 
-============================================================
 STEP 25: EXERCISE 7.2 – FILTER
-============================================================
+
 
 scala> spark.sql("""
      | SELECT emp_id, name,
@@ -591,9 +579,9 @@ scala> spark.sql("""
 +------+-------------+--------------------------------------+
 
 
-============================================================
+
 STEP 26: EXERCISE 7.3 – AGGREGATE
-============================================================
+
 
 scala> spark.sql("""
      | SELECT emp_id, name,
@@ -618,9 +606,8 @@ scala> spark.sql("""
 +------+-------------+-----------+
 
 
-============================================================
 STEP 27: EXERCISE 8.1 – PARSE AND EXPLODE TO ROWS
-============================================================
+
 
 scala> spark.sql("""
      | SELECT e.name,
@@ -663,9 +650,8 @@ scala> spark.sql("""
 +-------------+-----------+------------+------------+
 
 
-============================================================
 STEP 28: EXERCISE 8.2 – NAMED_STRUCT
-============================================================
+
 
 scala> spark.sql("""
      | SELECT d.dept_name,
@@ -690,10 +676,9 @@ scala> spark.sql("""
 +-----------+------------------------------+
 
 
-============================================================
 STEP 29: EXERCISE 9A – SQL VS DATAFRAME API
 SOLUTION A: PURE SPARK SQL
-============================================================
+
 
 scala> spark.sql("""
      | WITH ranked AS (
@@ -722,10 +707,9 @@ scala> spark.sql("""
 +-----------+-------------+-------+
 
 
-============================================================
 STEP 30: EXERCISE 9B – DATAFRAME API
 SOLUTION B: DATAFRAME APPROACH
-============================================================
+
 
 scala> import org.apache.spark.sql.expressions.Window
 
@@ -755,9 +739,9 @@ scala> result.show()
 +-----------+-------------+-------+
 
 
-============================================================
+
 STEP 31: CHALLENGE 10.1 – TOP EARNER PER LOCATION
-============================================================
+
 
 scala> spark.sql("""
      | WITH ranked AS (
@@ -784,10 +768,9 @@ scala> spark.sql("""
 +--------+-------------+-------+
 
 
-============================================================
 STEP 32: CHALLENGE 10.2 – SKILL SUMMARY WITH
          HIGHER-ORDER FUNCTIONS
-============================================================
+
 
 scala> spark.sql("""
      | SELECT emp_id, name,
@@ -814,9 +797,8 @@ scala> spark.sql("""
 +------+-------------+-----------+---------+--------------------------------+
 
 
-============================================================
 STEP 33: CHALLENGE 10.3 – MANAGER SALARY GAP
-============================================================
+
 
 scala> spark.sql("""
      | SELECT e.name AS employee,
@@ -840,10 +822,10 @@ scala> spark.sql("""
 +-----------+-------------+----------+----------+-------+
 
 
-============================================================
+
 STEP 34: CHALLENGE 10.4 – EXPLODED SKILLS +
          RUNNING SKILL COUNT PER DEPARTMENT
-============================================================
+
 
 scala> spark.sql("""
      | WITH exploded AS (

@@ -1,0 +1,333 @@
+RDD vs DataFrame Shuffle Activity – Complete Notes
+
+1.  EMPLOYEE INPUT DATA
+
+The code creates seven employee records:
+
+val employees = Seq( Employee(101, “Ravi”, “IT”, 80000L), Employee(102,
+“Priya”, “IT”, 90000L), Employee(103, “Arun”, “HR”, 50000L),
+Employee(104, “Kumar”, “HR”, 52000L), Employee(105, “Sneha”, “Sales”,
+60000L), Employee(106, “Divya”, “Sales”, 65000L), Employee(107, “Raj”,
+“Sales”, 55000L) )
+
+Employee data: Employee ID | Name | Department | Salary 101 | Ravi | IT
+| 80000 102 | Priya | IT | 90000 103 | Arun | HR | 50000 104 | Kumar |
+HR | 52000 105 | Sneha | Sales | 60000 106 | Divya | Sales | 65000 107 |
+Raj | Sales | 55000
+
+Total employees: 7 Departments: 3 Total salary: 452000
+
+2.  SPARKSESSION CREATION
+
+val spark = SparkSession.builder() .appName(“RDD vs DataFrame”)
+.master(“local[*]”) .getOrCreate()
+
+SparkSession is the entry point for Spark SQL and DataFrame operations.
+local[*] uses all available logical CPU cores on the local machine.
+getOrCreate() creates a session or reuses an existing one.
+
+spark.sparkContext.setLogLevel(“WARN”)
+
+This reduces Spark log messages. It does not remove errors or warnings.
+
+3.  RDD OPERATIONS
+
+Step 1: Create an RDD
+
+val employeeRDD = spark.sparkContext.parallelize(employees, 2)
+
+This distributes the seven employee records into two partitions.
+
+Illustrative partition distribution:
+
+Partition 0: Ravi – IT – 80000 Priya – IT – 90000 Arun – HR – 50000
+Kumar – HR – 52000
+
+Partition 1: Sneha – Sales – 60000 Divya – Sales – 65000 Raj – Sales –
+55000
+
+Actual element placement can depend on Spark’s partitioning behavior.
+
+Step 2: Map operation
+
+val departmentSalaryRDD = employeeRDD.map(e => (e.department, e.salary))
+
+map() converts every employee object into a key-value pair. For example:
+Employee(101, “Ravi”, “IT”, 80000) becomes (IT, 80000).
+
+Expected logical output: (IT, 80000) (IT, 90000) (HR, 50000) (HR, 52000)
+(Sales, 60000) (Sales, 65000) (Sales, 55000)
+
+Employee names and IDs are no longer present.
+
+Step 3: reduceByKey()
+
+val totalSalaryRDD = departmentSalaryRDD.reduceByKey(_ + _)
+
+reduceByKey() groups records having the same key and combines their
+values.
+
+Calculations: IT: 80000 + 90000 = 170000 HR: 50000 + 52000 = 102000
+Sales: 60000 + 65000 + 55000 = 180000
+
+Expected logical output: (IT, 170000) (HR, 102000) (Sales, 180000)
+
+Important: reduceByKey() causes a shuffle when records with the same key
+need to be brought together across partitions. Spark can perform local
+combining before transferring data across partitions.
+
+Step 4: sortBy()
+
+val sortedSalaryRDD = totalSalaryRDD.sortBy { case (department, total)
+=> (-total, department) }
+
+The negative total converts the value to negative. Sorting negative
+values in ascending order gives descending salary order. Department
+provides a secondary alphabetical sort.
+
+Expected logical output: (Sales, 180000) (IT, 170000) (HR, 102000)
+
+Step 5: Print RDD output
+
+println(“========== RDD OUTPUT ==========”)
+
+sortedSalaryRDD.collect().foreach { case (department, total) =>
+println(department + ” : ” + total) }
+
+Expected console output: ========== RDD OUTPUT ==========
+
+Sales : 180000 IT : 170000 HR : 102000
+
+collect() is an action. It brings all result records to the driver
+program.
+
+4.  DATAFRAME OPERATIONS
+
+Step 1: Convert Seq into DataFrame
+
+val employeeDF = employees.toDF()
+
+This converts the Scala collection into a Spark DataFrame.
+
+Expected DataFrame:
+
+  ------------ ------- ------------ --------
+  employeeId   name    department   salary
+
+  101 102 103  Ravi    IT IT HR HR  80000
+  104 105 106  Priya   Sales Sales  90000
+  107          Arun    Sales        50000
+               Kumar                52000
+               Sneha                60000
+               Divya                65000
+               Raj                  55000
+  ------------ ------- ------------ --------
+
+Step 2: groupBy()
+
+val departmentTotalsDF = employeeDF .groupBy(“department”) .agg(
+sum(“salary”).cast(“long”).as(“total_salary”) )
+
+groupBy(“department”) groups employees by department. sum(“salary”) adds
+salaries within each group. cast(“long”) converts the result into Long.
+as(“total_salary”) renames the result column.
+
+Expected logical result before sorting: Department | Total salary IT |
+170000 HR | 102000 Sales | 180000
+
+The row order before sorting is not guaranteed.
+
+Step 3: orderBy()
+
+val sortedSalaryDF = departmentTotalsDF .orderBy(desc(“total_salary”),
+asc(“department”))
+
+This sorts total salary in descending order and department name in
+ascending order when totals tie.
+
+Expected output:
+
+========== DATAFRAME OUTPUT ==========
+
+  ------------ --------------
+  department   total_salary
+
+  Sales IT HR  180000 170000
+               102000
+  ------------ --------------
+
+5.  DATAFRAME EXECUTION PLAN
+
+println(“========== DATAFRAME EXECUTION PLAN ==========”)
+
+sortedSalaryDF.explain(true)
+
+explain(true) displays the different sections of query planning.
+
+Illustrative plan structure (exact operators, partition counts and
+formatting depend on Spark 4.2.0 and runtime settings):
+
+== Parsed Logical Plan == ’Sort [’total_salary DESC NULLS LAST,
+’department ASC NULLS FIRST], true +- Aggregate [department],
+[department, sum(salary) AS total_salary]
+
+== Analyzed Logical Plan == department: string, total_salary: bigint
+
+== Optimized Logical Plan == Sort [total_salary DESC, department ASC] +-
+Aggregate [department], [department, sum(salary)] +- LocalTableScan
+
+== Physical Plan == AdaptiveSparkPlan +- Sort +- Exchange
+rangepartitioning(…) +- HashAggregate +- Exchange
+hashpartitioning(department, …) +- HashAggregate +- LocalTableScan
+
+Execution plan components: Parsed Logical Plan: Initial query
+representation. Analyzed Logical Plan: Spark resolves columns and data
+types. Optimized Logical Plan: Catalyst optimizes the query. Physical
+Plan: Spark selects execution operators. HashAggregate: Performs partial
+or final aggregation. Exchange: Represents a shuffle or data
+redistribution. Sort: Orders the final results.
+
+Important observation: The DataFrame API is declarative. You describe
+the required result, and Spark determines how to execute it.
+
+6.  COMPARE RDD AND DATAFRAME RESULTS
+
+RDD result:
+
+val rddResult = sortedSalaryRDD.collect().toSeq
+
+Expected: Seq( (“Sales”, 180000), (“IT”, 170000), (“HR”, 102000) )
+
+DataFrame result:
+
+val dfResult = sortedSalaryDF.collect().map { row => ( row.getAsString,
+row.getAsLong ) }.toSeq
+
+Expected: Seq( (“Sales”, 180000), (“IT”, 170000), (“HR”, 102000) )
+
+This extracts the department and total salary from each DataFrame row
+and converts them into tuples.
+
+7.  ASSERTION
+
+assert(rddResult == dfResult)
+
+This checks whether the two sequences are equal.
+
+Both results have: - Same department names. - Same salary totals. - Same
+ordering.
+
+Therefore, the assertion passes.
+
+Finally:
+
+println(“SUCCESS: Both outputs match!”)
+
+Expected: SUCCESS: Both outputs match!
+
+Then:
+
+spark.stop()
+
+Stops the SparkSession and releases its resources.
+
+8.  COMPLETE EXPECTED CONSOLE OUTPUT
+
+========== RDD OUTPUT ==========
+
+Sales : 180000 IT : 170000 HR : 102000
+
+========== DATAFRAME OUTPUT ==========
+
+  ------------ --------------
+  department   total_salary
+
+  Sales IT HR  180000 170000
+               102000
+  ------------ --------------
+
+========== DATAFRAME EXECUTION PLAN ==========
+
+[Parsed Logical Plan] [Analyzed Logical Plan] [Optimized Logical Plan]
+[Physical Plan]
+
+SUCCESS: Both outputs match!
+
+The execution-plan section will contain actual plan details, not just
+those four labels.
+
+9.  IMPORTANT OBSERVATIONS FOR YOUR TRAINER
+
+Q: What is an RDD? A: RDD is a distributed collection of data processed
+across partitions.
+
+Q: What is a DataFrame? A: A distributed table with named columns and a
+schema.
+
+Q: What is map()? A: It transforms each individual record.
+
+Q: What is reduceByKey()? A: It combines values belonging to the same
+key.
+
+Q: What is shuffle? A: It redistributes data across partitions, usually
+involving network or local data exchange.
+
+Q: Does map() cause shuffle? A: Normally no, because it works
+independently on each partition.
+
+Q: Does reduceByKey() cause shuffle? A: Yes, when matching keys must be
+combined across partitions.
+
+Q: What is groupBy()? A: It groups DataFrame records based on one or
+more columns.
+
+Q: What is Catalyst? A: Spark SQL’s query optimizer.
+
+Q: What is explain(true)? A: It shows logical and physical execution
+plans.
+
+Q: What is collect()? A: It brings distributed results to the driver.
+
+Q: Why use assert()? A: To verify that both approaches produce identical
+results.
+
+10. RDD VS DATAFRAME — FINAL COMPARISON
+
+Feature | RDD | DataFrame Structure | Distributed objects | Rows and
+columns Schema | No fixed tabular schema| Has schema Optimization | Less
+SQL-level optimization | Catalyst optimizer Operations | map,
+reduceByKey | select, filter, groupBy Type safety | Stronger with typed
+RDDs| Untyped column expressions Execution | Lower-level control |
+Higher-level declarative processing Best suited for | Custom low-level
+processing | Structured data analytics
+
+Main observation: Both approaches solve the same department salary
+problem and produce the same results. However, the DataFrame API gives
+Spark more information about the structure of the data, allowing Spark
+SQL’s optimizer to plan structured operations.
+
+11. EXTRA OBSERVATION
+
+The code calls sortedSalaryRDD.collect() twice. This is valid, but Spark
+may recompute the lineage because the RDD has not been cached.
+
+Also, the RDD and DataFrame results are compared as ordered sequences,
+so sorting both is essential.
+
+12. QUICK PRACTICAL QUIZ — ANSWERS
+
+13. Which operation combines salaries belonging to the same department
+    in the RDD approach? Answer: reduceByKey() Explanation:
+    reduceByKey() combines values with the same key.
+
+14. Which operation redistributes data between partitions? Answer:
+    Shuffle / Exchange Explanation: Shuffle redistributes records across
+    partitions. Exchange is a common physical-plan operator representing
+    that redistribution.
+
+15. Which component optimizes DataFrame queries? Answer: Catalyst
+    Explanation: Catalyst is Spark SQL’s query optimizer.
+
+16. What does assert(rddResult == dfResult) verify? Answer: Both produce
+    equal ordered results. Explanation: Sequence equality checks both
+    values and order.

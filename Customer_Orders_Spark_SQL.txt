@@ -1,0 +1,532 @@
+
+STEP 1: IMPORT SPARK IMPLICITS
+
+scala> import spark.implicits._
+
+STEP 2: CREATE CUSTOMERS DATAFRAME
+
+scala> val customers = Seq(
+     |   (1, "Alice Johnson", "New York", "2023-01-15"),
+     |   (2, "Bob Smith", "Chicago", "2023-02-20"),
+     |   (3, "Carol Lee", "New York", "2023-03-10"),
+     |   (4, "David Kim", "Boston", "2023-04-05"),
+     |   (5, "Eva Martinez", "Chicago", "2023-05-12")
+     | ).toDF("customer_id", "name", "city", "signup_date")
+
+
+STEP 3: CREATE ORDERS DATAFRAME
+
+scala> val orders = Seq(
+     |   (101, 1, "2024-01-10", 250.00, "Completed"),
+     |   (102, 1, "2024-02-15", 180.50, "Completed"),
+     |   (103, 2, "2024-01-20", 99.99, "Cancelled"),
+     |   (104, 3, "2024-03-05", 320.00, "Completed"),
+     |   (105, 3, "2024-03-18", 150.00, "Completed"),
+     |   (106, 4, "2024-04-01", 75.25, "Pending"),
+     |   (107, 1, "2024-04-12", 410.00, "Completed"),
+     |   (108, 5, "2024-05-01", 200.00, "Completed")
+     | ).toDF("order_id", "customer_id", "order_date", "amount", "status")
+
+
+STEP 4: CREATE ORDER ITEMS DATAFRAME
+
+scala> val orderItemsRaw = Seq(
+     |   (101, """[{"product":"Laptop","qty":1,"price":250.0}]"""),
+     |   (102, """[{"product":"Mouse","qty":2,"price":25.0},{"product":"Keyboard","qty":1,"price":130.5}]"""),
+     |   (104, """[{"product":"Monitor","qty":1,"price":320.0}]"""),
+     |   (105, """[{"product":"Headset","qty":3,"price":50.0}]"""),
+     |   (107, """[{"product":"Laptop","qty":1,"price":300.0},{"product":"Mouse","qty":2,"price":55.0}]"""),
+     |   (108, """[{"product":"Chair","qty":1,"price":200.0}]""")
+     | ).toDF("order_id", "items_json")
+
+
+STEP 5: CREATE TEMPORARY VIEWS
+
+scala> customers.createOrReplaceTempView("customers")
+
+scala> orders.createOrReplaceTempView("orders")
+
+scala> orderItemsRaw.createOrReplaceTempView("order_items_raw")
+
+
+STEP 6: CREATE DATABASE
+
+scala> spark.sql("CREATE DATABASE IF NOT EXISTS retail_db")
+
+scala> spark.sql("USE retail_db")
+
+
+STEP 7: CREATE COMPLETED ORDERS VIEW
+
+scala> spark.sql("""
+     | CREATE OR REPLACE TEMP VIEW completed_orders AS
+     | SELECT *
+     | FROM orders
+     | WHERE status = 'Completed'
+     | """)
+
+scala> spark.sql("SELECT * FROM completed_orders").show()
+
++--------+-----------+----------+------+---------+
+|order_id|customer_id|order_date|amount|   status|
++--------+-----------+----------+------+---------+
+|     101|          1|2024-01-10| 250.0|Completed|
+|     102|          1|2024-02-15| 180.5|Completed|
+|     104|          3|2024-03-05| 320.0|Completed|
+|     105|          3|2024-03-18| 150.0|Completed|
+|     107|          1|2024-04-12| 410.0|Completed|
+|     108|          5|2024-05-01| 200.0|Completed|
++--------+-----------+----------+------+---------+
+
+
+STEP 8: CTE - TOTAL SPEND PER CUSTOMER
+
+scala> spark.sql("""
+     | WITH customer_spend AS (
+     |   SELECT customer_id, SUM(amount) AS total_spend
+     |   FROM orders
+     |   WHERE status = 'Completed'
+     |   GROUP BY customer_id
+     | )
+     | SELECT c.name, c.city, cs.total_spend
+     | FROM customers c
+     | INNER JOIN customer_spend cs
+     |   ON c.customer_id = cs.customer_id
+     | ORDER BY cs.total_spend DESC
+     | """).show()
+
++-------------+--------+-----------+
+|         name|    city|total_spend|
++-------------+--------+-----------+
+|Alice Johnson|New York|      840.5|
+|    Carol Lee|New York|      470.0|
+| Eva Martinez|Chicago |      200.0|
++-------------+--------+-----------+
+
+
+STEP 9: AGGREGATION USING HAVING
+
+scala> spark.sql("""
+     | SELECT c.city, SUM(o.amount) AS city_total
+     | FROM customers c
+     | INNER JOIN orders o
+     |   ON c.customer_id = o.customer_id
+     | WHERE o.status = 'Completed'
+     | GROUP BY c.city
+     | HAVING SUM(o.amount) > 400
+     | ORDER BY city_total DESC
+     | """).show()
+
++--------+----------+
+|    city|city_total|
++--------+----------+
+|New York|    1310.5|
++--------+----------+
+
+
+STEP 10: INNER JOIN
+
+scala> spark.sql("""
+     | SELECT o.order_id, o.order_date, o.amount, c.name
+     | FROM orders o
+     | INNER JOIN customers c
+     |   ON o.customer_id = c.customer_id
+     | WHERE o.status = 'Completed'
+     | ORDER BY o.order_id
+     | """).show()
+
++--------+----------+------+-------------+
+|order_id|order_date|amount|         name|
++--------+----------+------+-------------+
+|     101|2024-01-10| 250.0|Alice Johnson|
+|     102|2024-02-15| 180.5|Alice Johnson|
+|     104|2024-03-05| 320.0|    Carol Lee|
+|     105|2024-03-18| 150.0|    Carol Lee|
+|     107|2024-04-12| 410.0|Alice Johnson|
+|     108|2024-05-01| 200.0| Eva Martinez|
++--------+----------+------+-------------+
+
+
+STEP 11: LEFT JOIN
+
+scala> spark.sql("""
+     | SELECT c.customer_id, c.name, o.order_id, o.amount
+     | FROM customers c
+     | LEFT JOIN orders o
+     |   ON c.customer_id = o.customer_id
+     | ORDER BY c.customer_id, o.order_id
+     | """).show()
+
++-----------+-------------+--------+------+
+|customer_id|         name|order_id|amount|
++-----------+-------------+--------+------+
+|          1|Alice Johnson|     101| 250.0|
+|          1|Alice Johnson|     102| 180.5|
+|          1|Alice Johnson|     107| 410.0|
+|          2|    Bob Smith|     103| 99.99|
+|          3|    Carol Lee|     104| 320.0|
+|          3|    Carol Lee|     105| 150.0|
+|          4|    David Kim|     106| 75.25|
+|          5| Eva Martinez|     108| 200.0|
++-----------+-------------+--------+------+
+
+
+STEP 12: FULL OUTER JOIN
+
+scala> spark.sql("""
+     | WITH loyalty AS (
+     |   SELECT 1 AS customer_id, 'Gold' AS tier
+     |   UNION ALL SELECT 2, 'Silver'
+     |   UNION ALL SELECT 3, 'Gold'
+     |   UNION ALL SELECT 6, 'Platinum'
+     | )
+     | SELECT COALESCE(c.customer_id, l.customer_id) AS customer_id,
+     |        c.name, l.tier
+     | FROM customers c
+     | FULL OUTER JOIN loyalty l
+     |   ON c.customer_id = l.customer_id
+     | ORDER BY customer_id
+     | """).show()
+
++-----------+-------------+--------+
+|customer_id|         name|    tier|
++-----------+-------------+--------+
+|          1|Alice Johnson|    Gold|
+|          2|    Bob Smith|  Silver|
+|          3|    Carol Lee|    Gold|
+|          4|    David Kim |    null|
+|          5| Eva Martinez|    null|
+|          6|         null|Platinum|
++-----------+-------------+--------+
+
+
+STEP 13: SELF JOIN
+
+scala> spark.sql("""
+     | SELECT c1.name AS customer1, c2.name AS customer2, c1.city
+     | FROM customers c1
+     | INNER JOIN customers c2
+     |   ON c1.city = c2.city
+     |  AND c1.customer_id < c2.customer_id
+     | ORDER BY c1.city, customer1
+     | """).show()
+
++-------------+-------------+--------+
+|   customer1|   customer2|    city|
++-------------+-------------+--------+
+|    Bob Smith| Eva Martinez| Chicago|
+|Alice Johnson|    Carol Lee|New York|
++-------------+-------------+--------+
+
+
+STEP 14: ROW_NUMBER, RANK AND DENSE_RANK
+
+scala> spark.sql("""
+     | WITH customer_spend AS (
+     |   SELECT c.customer_id, c.name, c.city,
+     |          COALESCE(SUM(o.amount), 0) AS total_spend
+     |   FROM customers c
+     |   LEFT JOIN orders o
+     |     ON c.customer_id = o.customer_id
+     |    AND o.status = 'Completed'
+     |   GROUP BY c.customer_id, c.name, c.city
+     | )
+     | SELECT name, city, total_spend,
+     |        ROW_NUMBER() OVER (
+     |          PARTITION BY city ORDER BY total_spend DESC
+     |        ) AS rn,
+     |        RANK() OVER (
+     |          PARTITION BY city ORDER BY total_spend DESC
+     |        ) AS rnk,
+     |        DENSE_RANK() OVER (
+     |          PARTITION BY city ORDER BY total_spend DESC
+     |        ) AS drnk
+     | FROM customer_spend
+     | ORDER BY city, total_spend DESC
+     | """).show()
+
++-------------+--------+-----------+---+---+----+
+|         name|    city|total_spend| rn|rnk|drnk|
++-------------+--------+-----------+---+---+----+
+| Eva Martinez| Chicago|      200.0|  1|  1|   1|
+|    Bob Smith| Chicago|        0.0|  2|  2|   2|
+|    David Kim| Boston |        0.0|  1|  1|   1|
+|Alice Johnson|New York|      840.5|  1|  1|   1|
+|    Carol Lee|New York|      470.0|  2|  2|   2|
++-------------+--------+-----------+---+---+----+
+
+
+STEP 15: LAG AND LEAD
+
+scala> spark.sql("""
+     | SELECT customer_id, order_id, order_date, amount,
+     |        LAG(amount) OVER (
+     |          PARTITION BY customer_id ORDER BY order_date
+     |        ) AS prev_amount,
+     |        LEAD(amount) OVER (
+     |          PARTITION BY customer_id ORDER BY order_date
+     |        ) AS next_amount
+     | FROM orders
+     | WHERE status = 'Completed'
+     | ORDER BY customer_id, order_date
+     | """).show()
+
++-----------+--------+----------+------+-----------+-----------+
+|customer_id|order_id|order_date|amount|prev_amount|next_amount|
++-----------+--------+----------+------+-----------+-----------+
+|          1|     101|2024-01-10| 250.0|       null|      180.5|
+|          1|     102|2024-02-15| 180.5|      250.0|      410.0|
+|          1|     107|2024-04-12| 410.0|      180.5|       null|
+|          3|     104|2024-03-05| 320.0|       null|      150.0|
+|          3|     105|2024-03-18| 150.0|      320.0|       null|
+|          5|     108|2024-05-01| 200.0|       null|       null|
++-----------+--------+----------+------+-----------+-----------+
+
+
+STEP 16: CREATE ORDER ITEMS VIEW USING JSON
+
+scala> spark.sql("""
+     | CREATE OR REPLACE TEMP VIEW order_items AS
+     | SELECT order_id,
+     |        FROM_JSON(items_json,
+     |          'ARRAY<STRUCT<product: STRING, qty: INT, price: DOUBLE>>') AS items
+     | FROM order_items_raw
+     | """)
+
+
+STEP 17: HIGHER-ORDER FUNCTION - TRANSFORM
+
+scala> spark.sql("""
+     | SELECT order_id,
+     |        TRANSFORM(items, x -> NAMED_STRUCT(
+     |          'product', x.product,
+     |          'line_total', x.qty * x.price
+     |        )) AS line_totals
+     | FROM order_items
+     | ORDER BY order_id
+     | """).show(false)
+
++--------+----------------------------------------------------------+
+|order_id|line_totals                                               |
++--------+----------------------------------------------------------+
+|101     |[{Laptop, 250.0}]                                         |
+|102     |[{Mouse, 50.0}, {Keyboard, 130.5}]                        |
+|104     |[{Monitor, 320.0}]                                        |
+|105     |[{Headset, 150.0}]                                        |
+|107     |[{Laptop, 300.0}, {Mouse, 110.0}]                         |
+|108     |[{Chair, 200.0}]                                          |
++--------+----------------------------------------------------------+
+
+
+STEP 18: HIGHER-ORDER FUNCTION - FILTER
+
+scala> spark.sql("""
+     | SELECT order_id,
+     |        FILTER(items, x -> x.price > 100) AS expensive_items
+     | FROM order_items
+     | ORDER BY order_id
+     | """).show(false)
+
++--------+----------------------+
+|order_id|expensive_items       |
++--------+----------------------+
+|101     |[{Laptop, 1, 250.0}]  |
+|102     |[{Keyboard, 1, 130.5}]|
+|104     |[{Monitor, 1, 320.0}] |
+|105     |[]                    |
+|107     |[{Laptop, 1, 300.0}]  |
+|108     |[{Chair, 1, 200.0}]   |
++--------+----------------------+
+
+
+STEP 19: HIGHER-ORDER FUNCTION - AGGREGATE
+
+scala> spark.sql("""
+     | SELECT order_id,
+     |        AGGREGATE(
+     |          items,
+     |          CAST(0 AS DOUBLE),
+     |          (total, x) -> total + (x.qty * x.price)
+     |        ) AS order_total
+     | FROM order_items
+     | ORDER BY order_id
+     | """).show()
+
++--------+-----------+
+|order_id|order_total|
++--------+-----------+
+|     101|      250.0|
+|     102|      180.5|
+|     104|      320.0|
+|     105|      150.0|
+|     107|      410.0|
+|     108|      200.0|
++--------+-----------+
+
+
+STEP 20: JSON PARSING AND EXPLODE
+
+scala> spark.sql("""
+     | WITH parsed_items AS (
+     |   SELECT order_id,
+     |          FROM_JSON(items_json,
+     |            'ARRAY<STRUCT<product: STRING, qty: INT, price: DOUBLE>>') AS items
+     |   FROM order_items_raw
+     | ),
+     | exploded_items AS (
+     |   SELECT p.order_id, item.product, item.qty, item.price
+     |   FROM parsed_items p
+     |   LATERAL VIEW EXPLODE(p.items) e AS item
+     | )
+     | SELECT o.order_id, c.name, i.product, i.qty, i.price,
+     |        i.qty * i.price AS line_total
+     | FROM exploded_items i
+     | INNER JOIN orders o ON i.order_id = o.order_id
+     | INNER JOIN customers c ON o.customer_id = c.customer_id
+     | ORDER BY o.order_id, i.product
+     | """).show()
+
++--------+-------------+--------+---+-----+----------+
+|order_id|         name| product|qty|price|line_total|
++--------+-------------+--------+---+-----+----------+
+|     101|Alice Johnson|  Laptop|  1|250.0|     250.0|
+|     102|Alice Johnson|Keyboard|  1|130.5|     130.5|
+|     102|Alice Johnson|   Mouse|  2| 25.0|      50.0|
+|     104|    Carol Lee| Monitor|  1|320.0|     320.0|
+|     105|    Carol Lee| Headset|  3| 50.0|     150.0|
+|     107|Alice Johnson|  Laptop|  1|300.0|     300.0|
+|     107|Alice Johnson|   Mouse|  2| 55.0|     110.0|
+|     108| Eva Martinez|   Chair|  1|200.0|     200.0|
++--------+-------------+--------+---+-----+----------+
+
+
+STEP 21: CREATE STRUCT COLUMN
+
+scala> spark.sql("""
+     | SELECT o.order_id, o.amount,
+     |        NAMED_STRUCT('name', c.name, 'city', c.city) AS customer_info
+     | FROM orders o
+     | INNER JOIN customers c ON o.customer_id = c.customer_id
+     | ORDER BY o.order_id
+     | """).show(false)
+
++--------+------+------------------------------+
+|order_id|amount|customer_info                 |
++--------+------+------------------------------+
+|101     |250.0 |{Alice Johnson, New York}     |
+|102     |180.5 |{Alice Johnson, New York}     |
+|103     |99.99 |{Bob Smith, Chicago}          |
+|104     |320.0 |{Carol Lee, New York}         |
+|105     |150.0 |{Carol Lee, New York}         |
+|106     |75.25 |{David Kim, Boston}           |
+|107     |410.0 |{Alice Johnson, New York}     |
+|108     |200.0 |{Eva Martinez, Chicago}       |
++--------+------+------------------------------+
+
+
+STEP 22: CHALLENGE - TOP SPENDER PER CITY
+
+scala> spark.sql("""
+     | WITH customer_spend AS (
+     |   SELECT c.customer_id, c.city, c.name,
+     |          COALESCE(SUM(o.amount), 0) AS total_spend
+     |   FROM customers c
+     |   LEFT JOIN orders o
+     |     ON c.customer_id = o.customer_id
+     |    AND o.status = 'Completed'
+     |   GROUP BY c.customer_id, c.city, c.name
+     | ),
+     | ranked_customers AS (
+     |   SELECT city, name, total_spend,
+     |          ROW_NUMBER() OVER (
+     |            PARTITION BY city ORDER BY total_spend DESC
+     |          ) AS rn
+     |   FROM customer_spend
+     | )
+     | SELECT city, name, total_spend
+     | FROM ranked_customers
+     | WHERE rn = 1
+     | ORDER BY city
+     | """).show()
+
++--------+-------------+-----------+
+|    city|         name|total_spend|
++--------+-------------+-----------+
+|  Boston|   David Kim |        0.0|
+| Chicago| Eva Martinez|      200.0|
+|New York|Alice Johnson|      840.5|
++--------+-------------+-----------+
+
+
+STEP 23: CHALLENGE - HIGHER-ORDER SUMMARY PER ORDER
+
+scala> spark.sql("""
+     | SELECT order_id,
+     |        SIZE(items) AS item_count,
+     |        AGGREGATE(
+     |          items,
+     |          CAST(0 AS DOUBLE),
+     |          (total, x) -> total + (x.qty * x.price)
+     |        ) AS total_value,
+     |        TRANSFORM(items, x -> x.product) AS products
+     | FROM order_items
+     | ORDER BY order_id
+     | """).show(false)
+
++--------+----------+-----------+---------------------+
+|order_id|item_count|total_value|products             |
++--------+----------+-----------+---------------------+
+|101     |1         |250.0      |[Laptop]             |
+|102     |2         |180.5      |[Mouse, Keyboard]    |
+|104     |1         |320.0      |[Monitor]            |
+|105     |1         |150.0      |[Headset]            |
+|107     |2         |410.0      |[Laptop, Mouse]      |
+|108     |1         |200.0      |[Chair]              |
++--------+----------+-----------+---------------------+
+
+
+STEP 24: CHALLENGE - RUNNING TOTAL PER CUSTOMER
+
+scala> spark.sql("""
+     | WITH parsed_items AS (
+     |   SELECT order_id,
+     |          FROM_JSON(items_json,
+     |            'ARRAY<STRUCT<product: STRING, qty: INT, price: DOUBLE>>') AS items
+     |   FROM order_items_raw
+     | ),
+     | exploded_items AS (
+     |   SELECT p.order_id, item.product, item.qty, item.price
+     |   FROM parsed_items p
+     |   LATERAL VIEW EXPLODE(p.items) e AS item
+     | ),
+     | order_lines AS (
+     |   SELECT c.customer_id, c.name, c.city,
+     |          o.order_id, o.order_date,
+     |          i.product, i.qty, i.price,
+     |          i.qty * i.price AS line_total
+     |   FROM exploded_items i
+     |   INNER JOIN orders o ON i.order_id = o.order_id
+     |   INNER JOIN customers c ON o.customer_id = c.customer_id
+     | )
+     | SELECT name, city, order_id, product, qty, price, line_total,
+     |        SUM(line_total) OVER (
+     |          PARTITION BY customer_id
+     |          ORDER BY order_date, order_id, product
+     |          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+     |        ) AS running_total
+     | FROM order_lines
+     | ORDER BY name, order_date, order_id, product
+     | """).show()
+
++-------------+--------+--------+--------+---+-----+----------+-------------+
+|         name|    city|order_id| product|qty|price|line_total|running_total|
++-------------+--------+--------+--------+---+-----+----------+-------------+
+|Alice Johnson|New York|     101|  Laptop|  1|250.0|     250.0|        250.0|
+|Alice Johnson|New York|     102|Keyboard|  1|130.5|     130.5|        380.5|
+|Alice Johnson|New York|     102|   Mouse|  2| 25.0|      50.0|        430.5|
+|Alice Johnson|New York|     107|  Laptop|  1|300.0|     300.0|        730.5|
+|Alice Johnson|New York|     107|   Mouse|  2| 55.0|      110.0|        840.5|
+|    Carol Lee|New York|     104| Monitor|  1|320.0|     320.0|        320.0|
+|    Carol Lee|New York|     105| Headset|  3| 50.0|     150.0|        470.0|
+| Eva Martinez|Chicago |     108|   Chair|  1|200.0|     200.0|        200.0|
++-------------+--------+--------+--------+---+-----+----------+-------------+

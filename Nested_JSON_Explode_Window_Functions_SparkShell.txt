@@ -1,0 +1,648 @@
+
+================================================================
+STEP 1: CREATE THE INPUT FILE – orders.json
+================================================================
+
+Create a file named:
+
+orders.json
+
+Add the following JSON records.
+Each order must be on a separate line.
+
+{"orderId":"O101","orderDate":"2026-11-01","customer":{"id":"C101","name":"Raj","city":"Hyderabad"},"items":[{"product":"Laptop","quantity":1,"price":55000},{"product":"Mouse","quantity":2,"price":500}],"payment":{"mode":"UPI","status":"Success"}}
+{"orderId":"O102","orderDate":"2026-11-02","customer":{"id":"C102","name":"John","city":"Chennai"},"items":[{"product":"Mobile","quantity":1,"price":25000},{"product":"Headphones","quantity":1,"price":2000}],"payment":{"mode":"Card","status":"Success"}}
+{"orderId":"O103","orderDate":"2026-11-03","customer":{"id":"C101","name":"Raj","city":"Hyderabad"},"items":[{"product":"Keyboard","quantity":1,"price":1500},{"product":"Mouse","quantity":1,"price":500}],"payment":{"mode":"UPI","status":"Success"}}
+{"orderId":"O104","orderDate":"2026-11-04","customer":{"id":"C103","name":"Priya","city":"Bangalore"},"items":[{"product":"Laptop","quantity":1,"price":60000}],"payment":{"mode":"NetBanking","status":"Pending"}}
+{"orderId":"O105","orderDate":"2026-11-05","customer":{"id":"C102","name":"John","city":"Chennai"},"items":[{"product":"Monitor","quantity":2,"price":12000}],"payment":{"mode":"Card","status":"Success"}}
+{"orderId":"O106","orderDate":"2026-11-06","customer":{"id":"C101","name":"Raj","city":"Hyderabad"},"items":[{"product":"Mobile","quantity":1,"price":30000}],"payment":{"mode":"UPI","status":"Success"}}
+
+
+================================================================
+STEP 2: IMPORT REQUIRED SPARK LIBRARIES
+================================================================
+
+scala> import org.apache.spark.sql.functions._
+
+scala> import org.apache.spark.sql.types._
+
+
+================================================================
+STEP 3: READ JSON FILE AS TEXT
+================================================================
+
+scala> val rawOrders = spark.read.text("orders.json")
+
+scala> rawOrders.show(false)
+
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|value                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+|{"orderId":"O101","orderDate":"2026-11-01","customer":{"id":"C101","name":"Raj","city":"Hyderabad"},"items":[{"product":"Laptop","quantity":1,"price":55000},{"product":"Mouse","quantity":2,"price":500}],"payment":{"mode":"UPI","status":"Success"}}|
+|{"orderId":"O102","orderDate":"2026-11-02","customer":{"id":"C102","name":"John","city":"Chennai"},"items":[{"product":"Mobile","quantity":1,"price":25000},{"product":"Headphones","quantity":1,"price":2000}],"payment":{"mode":"Card","status":"Success"}}|
+|{"orderId":"O103","orderDate":"2026-11-03","customer":{"id":"C101","name":"Raj","city":"Hyderabad"},"items":[{"product":"Keyboard","quantity":1,"price":1500},{"product":"Mouse","quantity":1,"price":500}],"payment":{"mode":"UPI","status":"Success"}}|
+|{"orderId":"O104","orderDate":"2026-11-04","customer":{"id":"C103","name":"Priya","city":"Bangalore"},"items":[{"product":"Laptop","quantity":1,"price":60000}],"payment":{"mode":"NetBanking","status":"Pending"}}|
+|{"orderId":"O105","orderDate":"2026-11-05","customer":{"id":"C102","name":"John","city":"Chennai"},"items":[{"product":"Monitor","quantity":2,"price":12000}],"payment":{"mode":"Card","status":"Success"}}|
+|{"orderId":"O106","orderDate":"2026-11-06","customer":{"id":"C101","name":"Raj","city":"Hyderabad"},"items":[{"product":"Mobile","quantity":1,"price":30000}],"payment":{"mode":"UPI","status":"Success"}}|
++------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+
+================================================================
+STEP 4: DEFINE EXPLICIT NESTED JSON SCHEMA
+================================================================
+
+scala> val customerSchema = StructType(Seq(
+     |   StructField("id", StringType, true),
+     |   StructField("name", StringType, true),
+     |   StructField("city", StringType, true)
+     | ))
+
+scala> val itemSchema = StructType(Seq(
+     |   StructField("product", StringType, true),
+     |   StructField("quantity", IntegerType, true),
+     |   StructField("price", DoubleType, true)
+     | ))
+
+scala> val paymentSchema = StructType(Seq(
+     |   StructField("mode", StringType, true),
+     |   StructField("status", StringType, true)
+     | ))
+
+scala> val orderSchema = StructType(Seq(
+     |   StructField("orderId", StringType, true),
+     |   StructField("orderDate", StringType, true),
+     |   StructField("customer", customerSchema, true),
+     |   StructField("items", ArrayType(itemSchema), true),
+     |   StructField("payment", paymentSchema, true)
+     | ))
+
+
+EXPECTED RESULT:
+
+Nested schema created successfully.
+
+
+================================================================
+STEP 5: PARSE JSON USING from_json()
+================================================================
+
+scala> val parsedOrders = rawOrders
+     |   .select(from_json(col("value"), orderSchema).as("order"))
+     |   .select("order.*")
+
+scala> parsedOrders.printSchema()
+
+root
+ |-- orderId: string (nullable = true)
+ |-- orderDate: string (nullable = true)
+ |-- customer: struct (nullable = true)
+ |    |-- id: string (nullable = true)
+ |    |-- name: string (nullable = true)
+ |    |-- city: string (nullable = true)
+ |-- items: array (nullable = true)
+ |    |-- element: struct (containsNull = true)
+ |    |    |-- product: string (nullable = true)
+ |    |    |-- quantity: integer (nullable = true)
+ |    |    |-- price: double (nullable = true)
+ |-- payment: struct (nullable = true)
+ |    |-- mode: string (nullable = true)
+ |    |-- status: string (nullable = true)
+
+
+scala> parsedOrders.show(false)
+
++-------+----------+------------------------+-----------------------------------------------+-------------------+
+|orderId|orderDate |customer                |items                                          |payment            |
++-------+----------+------------------------+-----------------------------------------------+-------------------+
+|O101   |2026-11-01|{C101, Raj, Hyderabad}  |[{Laptop, 1, 55000.0}, {Mouse, 2, 500.0}]      |{UPI, Success}     |
+|O102   |2026-11-02|{C102, John, Chennai}   |[{Mobile, 1, 25000.0}, {Headphones, 1, 2000.0}]|{Card, Success}    |
+|O103   |2026-11-03|{C101, Raj, Hyderabad}  |[{Keyboard, 1, 1500.0}, {Mouse, 1, 500.0}]     |{UPI, Success}     |
+|O104   |2026-11-04|{C103, Priya, Bangalore}|[{Laptop, 1, 60000.0}]                        |{NetBanking, Pending}|
+|O105   |2026-11-05|{C102, John, Chennai}   |[{Monitor, 2, 12000.0}]                       |{Card, Success}    |
+|O106   |2026-11-06|{C101, Raj, Hyderabad}  |[{Mobile, 1, 30000.0}]                        |{UPI, Success}     |
++-------+----------+------------------------+-----------------------------------------------+-------------------+
+
+
+================================================================
+STEP 6: EXTRACT NESTED FIELDS
+================================================================
+
+scala> val ordersExtracted = parsedOrders.select(
+     |   col("orderId"),
+     |   col("orderDate"),
+     |   col("customer.id").as("customerId"),
+     |   col("customer.name").as("customerName"),
+     |   col("customer.city").as("city"),
+     |   col("payment.mode").as("paymentMode"),
+     |   col("payment.status").as("paymentStatus")
+     | )
+
+scala> ordersExtracted.show()
+
++-------+----------+----------+------------+---------+-----------+------------+
+|orderId| orderDate|customerId|customerName|     city|paymentMode|paymentStatus|
++-------+----------+----------+------------+---------+-----------+------------+
+|   O101|2026-11-01|      C101|         Raj|Hyderabad|        UPI|     Success|
+|   O102|2026-11-02|      C102|        John|  Chennai|       Card|     Success|
+|   O103|2026-11-03|      C101|         Raj|Hyderabad|        UPI|     Success|
+|   O104|2026-11-04|      C103|       Priya|Bangalore| NetBanking|     Pending|
+|   O105|2026-11-05|      C102|        John|  Chennai|       Card|     Success|
+|   O106|2026-11-06|      C101|         Raj|Hyderabad|        UPI|     Success|
++-------+----------+----------+------------+---------+-----------+------------+
+
+
+================================================================
+STEP 7: EXPLODE ITEMS ARRAY INTO INDIVIDUAL ROWS
+================================================================
+
+scala> val explodedOrders = parsedOrders
+     |   .select(
+     |     col("orderId"),
+     |     col("orderDate"),
+     |     col("customer.id").as("customerId"),
+     |     col("customer.name").as("customerName"),
+     |     col("customer.city").as("city"),
+     |     col("payment.mode").as("paymentMode"),
+     |     col("payment.status").as("paymentStatus"),
+     |     explode(col("items")).as("item")
+     |   )
+
+scala> explodedOrders.show(false)
+
++-------+----------+----------+------------+---------+-----------+------------+-----------------------+
+|orderId|orderDate |customerId|customerName|city     |paymentMode|paymentStatus|item                   |
++-------+----------+----------+------------+---------+-----------+------------+-----------------------+
+|O101   |2026-11-01|C101      |Raj         |Hyderabad|UPI        |Success     |{Laptop, 1, 55000.0}   |
+|O101   |2026-11-01|C101      |Raj         |Hyderabad|UPI        |Success     |{Mouse, 2, 500.0}      |
+|O102   |2026-11-02|C102      |John        |Chennai  |Card       |Success     |{Mobile, 1, 25000.0}   |
+|O102   |2026-11-02|C102      |John        |Chennai  |Card       |Success     |{Headphones, 1, 2000.0}|
+|O103   |2026-11-03|C101      |Raj         |Hyderabad|UPI        |Success     |{Keyboard, 1, 1500.0}  |
+|O103   |2026-11-03|C101      |Raj         |Hyderabad|UPI        |Success     |{Mouse, 1, 500.0}      |
+|O104   |2026-11-04|C103      |Priya       |Bangalore|NetBanking |Pending     |{Laptop, 1, 60000.0}   |
+|O105   |2026-11-05|C102      |John        |Chennai  |Card       |Success     |{Monitor, 2, 12000.0}  |
+|O106   |2026-11-06|C101      |Raj         |Hyderabad|UPI        |Success     |{Mobile, 1, 30000.0}   |
++-------+----------+----------+------------+---------+-----------+------------+-----------------------+
+
+
+================================================================
+STEP 8: EXTRACT PRODUCT DETAILS AND CALCULATE PRODUCT_AMOUNT
+================================================================
+
+scala> val products = explodedOrders.select(
+     |   col("orderId"),
+     |   col("orderDate"),
+     |   col("customerId"),
+     |   col("customerName"),
+     |   col("city"),
+     |   col("paymentStatus"),
+     |   col("item.product").as("product"),
+     |   col("item.quantity").as("quantity"),
+     |   col("item.price").as("price")
+     | ).withColumn(
+     |   "product_amount",
+     |   col("quantity") * col("price")
+     | )
+
+scala> products.show()
+
++-------+----------+----------+------------+---------+------------+----------+--------+-------+--------------+
+|orderId| orderDate|customerId|customerName|     city|paymentStatus|   product|quantity|  price|product_amount|
++-------+----------+----------+------------+---------+------------+----------+--------+-------+--------------+
+|   O101|2026-11-01|      C101|         Raj|Hyderabad|     Success|    Laptop|       1|55000.0|       55000.0|
+|   O101|2026-11-01|      C101|         Raj|Hyderabad|     Success|     Mouse|       2|  500.0|        1000.0|
+|   O102|2026-11-02|      C102|        John|  Chennai|     Success|    Mobile|       1|25000.0|       25000.0|
+|   O102|2026-11-02|      C102|        John|  Chennai|     Success|Headphones|       1| 2000.0|        2000.0|
+|   O103|2026-11-03|      C101|         Raj|Hyderabad|     Success|  Keyboard|       1| 1500.0|        1500.0|
+|   O103|2026-11-03|      C101|         Raj|Hyderabad|     Success|     Mouse|       1|  500.0|         500.0|
+|   O104|2026-11-04|      C103|       Priya|Bangalore|     Pending|    Laptop|       1|60000.0|       60000.0|
+|   O105|2026-11-05|      C102|        John|  Chennai|     Success|   Monitor|       2|12000.0|       24000.0|
+|   O106|2026-11-06|      C101|         Raj|Hyderabad|     Success|    Mobile|       1|30000.0|       30000.0|
++-------+----------+----------+------------+---------+------------+----------+--------+-------+--------------+
+
+
+================================================================
+STEP 9: CALCULATE TOTAL SALES FOR EACH PRODUCT
+================================================================
+
+scala> val productSales = products
+     |   .groupBy("product")
+     |   .agg(sum("product_amount").as("total_sales"))
+     |   .orderBy(desc("total_sales"))
+
+scala> productSales.show()
+
++----------+-----------+
+|   product|total_sales|
++----------+-----------+
+|    Laptop|   115000.0|
+|    Mobile|    55000.0|
+|   Monitor|    24000.0|
+|Headphones|     2000.0|
+|  Keyboard|     1500.0|
+|     Mouse|     1500.0|
++----------+-----------+
+
+
+================================================================
+STEP 10: CALCULATE TOTAL VALUE OF EACH ORDER
+================================================================
+
+scala> val orderTotals = products
+     |   .groupBy("orderId", "orderDate", "customerId", "customerName")
+     |   .agg(sum("product_amount").as("order_total"))
+     |   .orderBy("orderDate")
+
+scala> orderTotals.show()
+
++-------+----------+----------+------------+-----------+
+|orderId| orderDate|customerId|customerName|order_total|
++-------+----------+----------+------------+-----------+
+|   O101|2026-11-01|      C101|         Raj|    56000.0|
+|   O102|2026-11-02|      C102|        John|    27000.0|
+|   O103|2026-11-03|      C101|         Raj|     2000.0|
+|   O104|2026-11-04|      C103|       Priya|    60000.0|
+|   O105|2026-11-05|      C102|        John|    24000.0|
+|   O106|2026-11-06|      C101|         Raj|    30000.0|
++-------+----------+----------+------------+-----------+
+
+
+================================================================
+STEP 11: CREATE TEMPORARY VIEW – orders_view
+================================================================
+
+scala> parsedOrders.createOrReplaceTempView("orders_view")
+
+scala> spark.sql("SELECT * FROM orders_view").show(false)
+
++-------+----------+------------------------+-----------------------------------------------+-------------------+
+|orderId|orderDate |customer                |items                                          |payment            |
++-------+----------+------------------------+-----------------------------------------------+-------------------+
+|O101   |2026-11-01|{C101, Raj, Hyderabad}  |[{Laptop, 1, 55000.0}, {Mouse, 2, 500.0}]      |{UPI, Success}     |
+|O102   |2026-11-02|{C102, John, Chennai}   |[{Mobile, 1, 25000.0}, {Headphones, 1, 2000.0}]|{Card, Success}    |
+|O103   |2026-11-03|{C101, Raj, Hyderabad}  |[{Keyboard, 1, 1500.0}, {Mouse, 1, 500.0}]     |{UPI, Success}     |
+|O104   |2026-11-04|{C103, Priya, Bangalore}|[{Laptop, 1, 60000.0}]                        |{NetBanking, Pending}|
+|O105   |2026-11-05|{C102, John, Chennai}   |[{Monitor, 2, 12000.0}]                       |{Card, Success}    |
+|O106   |2026-11-06|{C101, Raj, Hyderabad}  |[{Mobile, 1, 30000.0}]                        |{UPI, Success}     |
++-------+----------+------------------------+-----------------------------------------------+-------------------+
+
+
+================================================================
+STEP 12: CREATE TEMPORARY VIEW – products_view
+================================================================
+
+scala> products.createOrReplaceTempView("products_view")
+
+scala> spark.sql("SELECT * FROM products_view").show()
+
++-------+----------+----------+------------+---------+------------+----------+--------+-------+--------------+
+|orderId| orderDate|customerId|customerName|     city|paymentStatus|   product|quantity|  price|product_amount|
++-------+----------+----------+------------+---------+------------+----------+--------+-------+--------------+
+|   O101|2026-11-01|      C101|         Raj|Hyderabad|     Success|    Laptop|       1|55000.0|       55000.0|
+|   O101|2026-11-01|      C101|         Raj|Hyderabad|     Success|     Mouse|       2|  500.0|        1000.0|
+|   O102|2026-11-02|      C102|        John|  Chennai|     Success|    Mobile|       1|25000.0|       25000.0|
+|   O102|2026-11-02|      C102|        John|  Chennai|     Success|Headphones|       1| 2000.0|        2000.0|
+|   O103|2026-11-03|      C101|         Raj|Hyderabad|     Success|  Keyboard|       1| 1500.0|        1500.0|
+|   O103|2026-11-03|      C101|         Raj|Hyderabad|     Success|     Mouse|       1|  500.0|         500.0|
+|   O104|2026-11-04|      C103|       Priya|Bangalore|     Pending|    Laptop|       1|60000.0|       60000.0|
+|   O105|2026-11-05|      C102|        John|  Chennai|     Success|   Monitor|       2|12000.0|       24000.0|
+|   O106|2026-11-06|      C101|         Raj|Hyderabad|     Success|    Mobile|       1|30000.0|       30000.0|
++-------+----------+----------+------------+---------+------------+----------+--------+-------+--------------+
+
+
+================================================================
+STEP 13: FIND ORDERS PLACED BY CUSTOMERS FROM HYDERABAD
+================================================================
+
+scala> spark.sql("""
+     | SELECT orderId, orderDate,
+     |        customer.id AS customerId,
+     |        customer.name AS customerName,
+     |        customer.city AS city
+     | FROM orders_view
+     | WHERE customer.city = 'Hyderabad'
+     | ORDER BY orderDate
+     | """).show()
+
++-------+----------+----------+------------+---------+
+|orderId| orderDate|customerId|customerName|     city|
++-------+----------+----------+------------+---------+
+|   O101|2026-11-01|      C101|         Raj|Hyderabad|
+|   O103|2026-11-03|      C101|         Raj|Hyderabad|
+|   O106|2026-11-06|      C101|         Raj|Hyderabad|
++-------+----------+----------+------------+---------+
+
+
+================================================================
+STEP 14: FIND ORDERS WHERE PAYMENT STATUS IS SUCCESS
+================================================================
+
+scala> spark.sql("""
+     | SELECT orderId, orderDate,
+     |        customer.name AS customerName,
+     |        payment.mode AS paymentMode,
+     |        payment.status AS paymentStatus
+     | FROM orders_view
+     | WHERE payment.status = 'Success'
+     | ORDER BY orderDate
+     | """).show()
+
++-------+----------+------------+-----------+------------+
+|orderId| orderDate|customerName|paymentMode|paymentStatus|
++-------+----------+------------+-----------+------------+
+|   O101|2026-11-01|         Raj|        UPI|     Success|
+|   O102|2026-11-02|        John|       Card|     Success|
+|   O103|2026-11-03|         Raj|        UPI|     Success|
+|   O105|2026-11-05|        John|       Card|     Success|
+|   O106|2026-11-06|         Raj|        UPI|     Success|
++-------+----------+------------+-----------+------------+
+
+
+================================================================
+STEP 15: FIND PRODUCTS WITH UNIT PRICE GREATER THAN 10,000
+================================================================
+
+scala> spark.sql("""
+     | SELECT orderId, product, quantity, price
+     | FROM products_view
+     | WHERE price > 10000
+     | ORDER BY orderId
+     | """).show()
+
++-------+-------+--------+-------+
+|orderId|product|quantity|  price|
++-------+-------+--------+-------+
+|   O101| Laptop|       1|55000.0|
+|   O102| Mobile|       1|25000.0|
+|   O104| Laptop|       1|60000.0|
+|   O105|Monitor|       2|12000.0|
+|   O106| Mobile|       1|30000.0|
++-------+-------+--------+-------+
+
+
+================================================================
+STEP 16: CALCULATE TOTAL SPENDING BY CUSTOMER
+================================================================
+
+scala> spark.sql("""
+     | SELECT customerId, customerName,
+     |        SUM(order_total) AS total_spending
+     | FROM (
+     |   SELECT orderId, customerId, customerName,
+     |          SUM(product_amount) AS order_total
+     |   FROM products_view
+     |   GROUP BY orderId, customerId, customerName
+     | )
+     | GROUP BY customerId, customerName
+     | ORDER BY total_spending DESC
+     | """).show()
+
++----------+------------+--------------+
+|customerId|customerName|total_spending|
++----------+------------+--------------+
+|      C101|         Raj|       88000.0|
+|      C103|       Priya|       60000.0|
+|      C102|        John|       51000.0|
++----------+------------+--------------+
+
+
+================================================================
+STEP 17: CREATE ORDER TOTALS TEMPORARY VIEW
+================================================================
+
+scala> orderTotals.createOrReplaceTempView("order_totals_view")
+
+scala> spark.sql("SELECT * FROM order_totals_view").show()
+
++-------+----------+----------+------------+-----------+
+|orderId| orderDate|customerId|customerName|order_total|
++-------+----------+----------+------------+-----------+
+|   O101|2026-11-01|      C101|         Raj|    56000.0|
+|   O102|2026-11-02|      C102|        John|    27000.0|
+|   O103|2026-11-03|      C101|         Raj|     2000.0|
+|   O104|2026-11-04|      C103|       Priya|    60000.0|
+|   O105|2026-11-05|      C102|        John|    24000.0|
+|   O106|2026-11-06|      C101|         Raj|    30000.0|
++-------+----------+----------+------------+-----------+
+
+
+================================================================
+STEP 18: ROW_NUMBER() – LATEST ORDER FOR EACH CUSTOMER
+================================================================
+
+scala> spark.sql("""
+     | SELECT customerId, customerName, orderId,
+     |        orderDate, order_total,
+     |        ROW_NUMBER() OVER (
+     |          PARTITION BY customerId
+     |          ORDER BY orderDate DESC
+     |        ) AS row_num
+     | FROM order_totals_view
+     | """).show()
+
++----------+------------+-------+----------+-----------+-------+
+|customerId|customerName|orderId| orderDate|order_total|row_num|
++----------+------------+-------+----------+-----------+-------+
+|      C101|         Raj|   O106|2026-11-06|    30000.0|      1|
+|      C101|         Raj|   O103|2026-11-03|     2000.0|      2|
+|      C101|         Raj|   O101|2026-11-01|    56000.0|      3|
+|      C102|        John|   O105|2026-11-05|    24000.0|      1|
+|      C102|        John|   O102|2026-11-02|    27000.0|      2|
+|      C103|       Priya|   O104|2026-11-04|    60000.0|      1|
++----------+------------+-------+----------+-----------+-------+
+
+
+TO GET ONLY THE LATEST ORDER:
+
+scala> spark.sql("""
+     | SELECT customerId, customerName, orderId,
+     |        orderDate, order_total
+     | FROM (
+     |   SELECT *,
+     |          ROW_NUMBER() OVER (
+     |            PARTITION BY customerId
+     |            ORDER BY orderDate DESC
+     |          ) AS rn
+     |   FROM order_totals_view
+     | )
+     | WHERE rn = 1
+     | ORDER BY customerId
+     | """).show()
+
++----------+------------+-------+----------+-----------+
+|customerId|customerName|orderId| orderDate|order_total|
++----------+------------+-------+----------+-----------+
+|      C101|         Raj|   O106|2026-11-06|    30000.0|
+|      C102|        John|   O105|2026-11-05|    24000.0|
+|      C103|       Priya|   O104|2026-11-04|    60000.0|
++----------+------------+-------+----------+-----------+
+
+
+================================================================
+STEP 19: RANK() – RANK CUSTOMER ORDERS BY ORDER VALUE
+================================================================
+
+scala> spark.sql("""
+     | SELECT customerId, customerName, orderId,
+     |        order_total,
+     |        RANK() OVER (
+     |          PARTITION BY customerId
+     |          ORDER BY order_total DESC
+     |        ) AS order_rank
+     | FROM order_totals_view
+     | ORDER BY customerId, order_rank
+     | """).show()
+
++----------+------------+-------+-----------+----------+
+|customerId|customerName|orderId|order_total|order_rank|
++----------+------------+-------+-----------+----------+
+|      C101|         Raj|   O101|    56000.0|         1|
+|      C101|         Raj|   O106|    30000.0|         2|
+|      C101|         Raj|   O103|     2000.0|         3|
+|      C102|        John|   O102|    27000.0|         1|
+|      C102|        John|   O105|    24000.0|         2|
+|      C103|       Priya|   O104|    60000.0|         1|
++----------+------------+-------+-----------+----------+
+
+
+================================================================
+STEP 20: DENSE_RANK() – RANK PRODUCTS BY TOTAL SALES
+================================================================
+
+scala> spark.sql("""
+     | WITH product_sales AS (
+     |   SELECT product,
+     |          SUM(product_amount) AS total_sales
+     |   FROM products_view
+     |   GROUP BY product
+     | )
+     | SELECT product, total_sales,
+     |        DENSE_RANK() OVER (
+     |          ORDER BY total_sales DESC
+     |        ) AS sales_rank
+     | FROM product_sales
+     | ORDER BY sales_rank, product
+     | """).show()
+
++----------+-----------+----------+
+|   product|total_sales|sales_rank|
++----------+-----------+----------+
+|    Laptop|   115000.0|         1|
+|    Mobile|    55000.0|         2|
+|   Monitor|    24000.0|         3|
+|Headphones|     2000.0|         4|
+|  Keyboard|     1500.0|         5|
+|     Mouse|     1500.0|         5|
++----------+-----------+----------+
+
+
+================================================================
+STEP 21: SUM() OVER – RUNNING SPENDING TOTAL
+================================================================
+
+scala> spark.sql("""
+     | SELECT customerId, customerName,
+     |        orderId, orderDate, order_total,
+     |        SUM(order_total) OVER (
+     |          PARTITION BY customerId
+     |          ORDER BY orderDate
+     |          ROWS BETWEEN UNBOUNDED PRECEDING
+     |          AND CURRENT ROW
+     |        ) AS running_total
+     | FROM order_totals_view
+     | ORDER BY customerId, orderDate
+     | """).show()
+
++----------+------------+-------+----------+-----------+-------------+
+|customerId|customerName|orderId| orderDate|order_total|running_total|
++----------+------------+-------+----------+-----------+-------------+
+|      C101|         Raj|   O101|2026-11-01|    56000.0|      56000.0|
+|      C101|         Raj|   O103|2026-11-03|     2000.0|      58000.0|
+|      C101|         Raj|   O106|2026-11-06|    30000.0|      88000.0|
+|      C102|        John|   O102|2026-11-02|    27000.0|      27000.0|
+|      C102|        John|   O105|2026-11-05|    24000.0|      51000.0|
+|      C103|       Priya|   O104|2026-11-04|    60000.0|      60000.0|
++----------+------------+-------+----------+-----------+-------------+
+
+
+================================================================
+STEP 22: LAG() – PREVIOUS ORDER VALUE
+================================================================
+
+scala> spark.sql("""
+     | SELECT customerId, customerName,
+     |        orderId, orderDate, order_total,
+     |        LAG(order_total) OVER (
+     |          PARTITION BY customerId
+     |          ORDER BY orderDate
+     |        ) AS previous_order_total
+     | FROM order_totals_view
+     | ORDER BY customerId, orderDate
+     | """).show()
+
++----------+------------+-------+----------+-----------+--------------------+
+|customerId|customerName|orderId| orderDate|order_total|previous_order_total|
++----------+------------+-------+----------+-----------+--------------------+
+|      C101|         Raj|   O101|2026-11-01|    56000.0|                null|
+|      C101|         Raj|   O103|2026-11-03|     2000.0|             56000.0|
+|      C101|         Raj|   O106|2026-11-06|    30000.0|              2000.0|
+|      C102|        John|   O102|2026-11-02|    27000.0|                null|
+|      C102|        John|   O105|2026-11-05|    24000.0|             27000.0|
+|      C103|       Priya|   O104|2026-11-04|    60000.0|                null|
++----------+------------+-------+----------+-----------+--------------------+
+
+
+================================================================
+STEP 23: FIND THE SECOND ORDER BY VALUE FOR EACH CUSTOMER
+================================================================
+
+scala> spark.sql("""
+     | SELECT customerId, customerName,
+     |        orderId, order_total
+     | FROM (
+     |   SELECT *,
+     |          ROW_NUMBER() OVER (
+     |            PARTITION BY customerId
+     |            ORDER BY order_total DESC
+     |          ) AS rn
+     |   FROM order_totals_view
+     | )
+     | WHERE rn = 2
+     | ORDER BY customerId
+     | """).show()
+
++----------+------------+-------+-----------+
+|customerId|customerName|orderId|order_total|
++----------+------------+-------+-----------+
+|      C101|         Raj|   O106|    30000.0|
+|      C102|        John|   O105|    24000.0|
++----------+------------+-------+-----------+
+
+
+================================================================
+STEP 24: VALIDATE THE RESULTS
+================================================================
+
+scala> println("Total orders: " + parsedOrders.count())
+
+Total orders: 6
+
+scala> println("Total exploded product rows: " + products.count())
+
+Total exploded product rows: 9
+
+scala> println("Total distinct products: " +
+     |   products.select("product").distinct().count())
+
+Total distinct products: 6
+
+scala> println("Total customers: " +
+     |   parsedOrders.select("customer.id").distinct().count())
+
+Total customers: 3
+
+scala> println("Total order value: " +
+     |   orderTotals.agg(sum("order_total")).first().getDouble(0))
+
+Total order value: 208000.0
+
+

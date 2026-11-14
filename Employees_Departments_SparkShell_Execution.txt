@@ -1,0 +1,892 @@
+
+============================================================
+STEP 1: IMPORT SPARK FUNCTIONS AND IMPLICITS
+============================================================
+
+scala> import org.apache.spark.sql.functions._
+
+scala> import spark.implicits._
+
+
+============================================================
+STEP 2: CREATE DEPARTMENT CASE CLASS
+============================================================
+
+scala> case class Department(
+     |   dept_id: Int,
+     |   dept_name: String,
+     |   location: String
+     | )
+
+
+============================================================
+STEP 3: CREATE EMPLOYEE CASE CLASS
+============================================================
+
+scala> case class Employee(
+     |   emp_id: Int,
+     |   name: String,
+     |   dept_id: Int,
+     |   salary: Double,
+     |   hire_date: String,
+     |   manager_id: Option[Int],
+     |   skills_json: String
+     | )
+
+
+============================================================
+STEP 4: CREATE DEPARTMENT SEQUENCE
+============================================================
+
+scala> val deptSeq = Seq(
+     |   Department(10, "Engineering", "New York"),
+     |   Department(20, "Sales", "Chicago"),
+     |   Department(30, "HR", "Boston"),
+     |   Department(40, "Marketing", "New York"),
+     |   Department(50, "Finance", "Chicago")
+     | )
+
+
+============================================================
+STEP 5: CREATE EMPLOYEE SEQUENCE
+============================================================
+
+scala> val empSeq = Seq(
+     |   Employee(101, "Alice Johnson", 10, 95000.0, "2020-01-15", None, """[{"skill":"Scala","level":"Expert"},{"skill":"Spark","level":"Advanced"}]"""),
+     |   Employee(102, "Bob Smith", 10, 88000.0, "2021-03-20", Some(101), """[{"skill":"Java","level":"Advanced"},{"skill":"Kafka","level":"Intermediate"}]"""),
+     |   Employee(103, "Carol Lee", 20, 72000.0, "2019-07-10", None, """[{"skill":"CRM","level":"Expert"},{"skill":"Negotiation","level":"Advanced"}]"""),
+     |   Employee(104, "David Kim", 20, 68000.0, "2022-02-05", Some(103), """[{"skill":"Excel","level":"Advanced"}]"""),
+     |   Employee(105, "Eva Martinez", 30, 65000.0, "2020-11-12", None, """[{"skill":"Recruiting","level":"Expert"},{"skill":"Payroll","level":"Intermediate"}]"""),
+     |   Employee(106, "Frank Brown", 10, 92000.0, "2018-05-01", Some(101), """[{"skill":"Python","level":"Expert"},{"skill":"Spark","level":"Expert"},{"skill":"Airflow","level":"Advanced"}]"""),
+     |   Employee(107, "Grace Park", 40, 71000.0, "2021-09-18", None, """[{"skill":"SEO","level":"Advanced"},{"skill":"Content","level":"Expert"}]"""),
+     |   Employee(108, "Henry Wilson", 50, 85000.0, "2019-12-01", None, """[{"skill":"Accounting","level":"Expert"},{"skill":"Excel","level":"Expert"}]"""),
+     |   Employee(109, "Ivy Chen", 20, 75000.0, "2023-01-22", Some(103), """[{"skill":"Salesforce","level":"Intermediate"}]"""),
+     |   Employee(110, "Jack Davis", 10, 78000.0, "2022-08-30", Some(101), """[{"skill":"Scala","level":"Intermediate"},{"skill":"SQL","level":"Advanced"}]""")
+     | )
+
+
+============================================================
+STEP 6: CREATE DEPARTMENTS AND EMPLOYEES DATAFRAMES
+============================================================
+
+scala> val departments = deptSeq.toDF()
+
+scala> val employees = empSeq.toDF()
+
+
+============================================================
+STEP 7: CREATE TEMPORARY VIEWS
+============================================================
+
+scala> departments.createOrReplaceTempView("departments")
+
+scala> employees.createOrReplaceTempView("employees")
+
+
+============================================================
+STEP 8: DISPLAY SETUP DATA
+============================================================
+
+scala> println("Setup complete – temp views ready")
+
+Setup complete – temp views ready
+
+scala> spark.sql("SELECT * FROM departments").show()
+
++-------+-----------+--------+
+|dept_id|  dept_name|location|
++-------+-----------+--------+
+|     10|Engineering|New York|
+|     20|      Sales| Chicago|
+|     30|         HR|  Boston|
+|     40|  Marketing|New York|
+|     50|    Finance| Chicago|
++-------+-----------+--------+
+
+scala> spark.sql("SELECT emp_id, name, dept_id, salary FROM employees").show()
+
++------+-------------+-------+-------+
+|emp_id|         name|dept_id| salary|
++------+-------------+-------+-------+
+|   101|Alice Johnson|     10|95000.0|
+|   102|    Bob Smith|     10|88000.0|
+|   103|    Carol Lee|     20|72000.0|
+|   104|    David Kim|     20|68000.0|
+|   105| Eva Martinez|     30|65000.0|
+|   106|  Frank Brown|     10|92000.0|
+|   107|   Grace Park|     40|71000.0|
+|   108| Henry Wilson|     50|85000.0|
+|   109|      Ivy Chen|     20|75000.0|
+|   110|   Jack Davis|     10|78000.0|
++------+-------------+-------+-------+
+
+
+============================================================
+STEP 9: EXERCISE 2.1 – BASIC SELECT
+============================================================
+
+scala> spark.sql("""
+     | SELECT emp_id, name, salary
+     | FROM employees
+     | WHERE salary > 80000
+     | ORDER BY salary DESC
+     | """).show()
+
++------+-------------+-------+
+|emp_id|         name| salary|
++------+-------------+-------+
+|   101|Alice Johnson|95000.0|
+|   106|  Frank Brown|92000.0|
+|   102|    Bob Smith|88000.0|
+|   108| Henry Wilson|85000.0|
++------+-------------+-------+
+
+
+============================================================
+STEP 10: EXERCISE 2.2 – AGGREGATE
+============================================================
+
+scala> spark.sql("""
+     | SELECT dept_id,
+     |        ROUND(AVG(salary), 2) AS avg_salary,
+     |        COUNT(*) AS emp_count
+     | FROM employees
+     | GROUP BY dept_id
+     | ORDER BY dept_id
+     | """).show()
+
++-------+----------+---------+
+|dept_id|avg_salary|emp_count|
++-------+----------+---------+
+|     10|   88250.0|        4|
+|     20|  71666.67|        3|
+|     30|   65000.0|        1|
+|     40|   71000.0|        1|
+|     50|   85000.0|        1|
++-------+----------+---------+
+
+
+============================================================
+STEP 11: EXERCISE 3.1 – CREATE DATABASE AND USE
+============================================================
+
+scala> spark.sql("CREATE DATABASE IF NOT EXISTS hr_db")
+
+scala> spark.sql("USE hr_db")
+
+scala> spark.sql("SELECT current_database()").show()
+
++----------------+
+|current_database|
++----------------+
+|           hr_db|
++----------------+
+
+
+============================================================
+STEP 12: EXERCISE 3.2 – CREATE TEMPORARY VIEW
+============================================================
+
+scala> spark.sql("""
+     | CREATE OR REPLACE TEMPORARY VIEW high_earners AS
+     | SELECT emp_id, name, dept_id, salary
+     | FROM employees
+     | WHERE salary >= 85000
+     | """)
+
+scala> spark.sql("SELECT * FROM high_earners ORDER BY salary DESC").show()
+
++------+-------------+-------+-------+
+|emp_id|         name|dept_id| salary|
++------+-------------+-------+-------+
+|   101|Alice Johnson|     10|95000.0|
+|   106|  Frank Brown|     10|92000.0|
+|   102|    Bob Smith|     10|88000.0|
+|   108| Henry Wilson|     50|85000.0|
++------+-------------+-------+-------+
+
+
+============================================================
+STEP 13: EXERCISE 3.3 – GLOBAL TEMPORARY VIEW
+============================================================
+
+scala> spark.sql("""
+     | CREATE OR REPLACE GLOBAL TEMPORARY VIEW eng_employees AS
+     | SELECT e.emp_id, e.name, e.salary
+     | FROM employees e
+     | JOIN departments d ON e.dept_id = d.dept_id
+     | WHERE d.dept_name = 'Engineering'
+     | """)
+
+scala> spark.sql("SELECT * FROM global_temp.eng_employees").show()
+
++------+-------------+-------+
+|emp_id|         name| salary|
++------+-------------+-------+
+|   101|Alice Johnson|95000.0|
+|   102|    Bob Smith|88000.0|
+|   106|  Frank Brown|92000.0|
+|   110|   Jack Davis|78000.0|
++------+-------------+-------+
+
+
+============================================================
+STEP 14: EXERCISE 4.1 – SINGLE CTE
+============================================================
+
+scala> spark.sql("""
+     | WITH dept_payroll AS (
+     |   SELECT dept_id, SUM(salary) AS total_payroll
+     |   FROM employees
+     |   GROUP BY dept_id
+     | )
+     | SELECT d.dept_name, dp.total_payroll
+     | FROM dept_payroll dp
+     | JOIN departments d ON dp.dept_id = d.dept_id
+     | ORDER BY dp.total_payroll DESC
+     | """).show()
+
++-----------+-------------+
+|  dept_name|total_payroll|
++-----------+-------------+
+|Engineering|     353000.0|
+|      Sales|     215000.0|
+|    Finance|      85000.0|
+|  Marketing|      71000.0|
+|         HR|      65000.0|
++-----------+-------------+
+
+
+============================================================
+STEP 15: EXERCISE 4.2 – MULTIPLE CTEs
+============================================================
+
+scala> spark.sql("""
+     | WITH company_avg AS (
+     |   SELECT AVG(salary) AS avg_sal
+     |   FROM employees
+     | ),
+     | above_avg AS (
+     |   SELECT e.emp_id, e.name, e.salary, c.avg_sal
+     |   FROM employees e
+     |   CROSS JOIN company_avg c
+     |   WHERE e.salary > c.avg_sal
+     | )
+     | SELECT name, salary,
+     |        ROUND(salary - avg_sal, 2) AS above_by
+     | FROM above_avg
+     | ORDER BY above_by DESC
+     | """).show()
+
++-------------+-------+--------+
+|         name| salary|above_by|
++-------------+-------+--------+
+|Alice Johnson|95000.0| 16100.0|
+|  Frank Brown|92000.0| 13100.0|
+|    Bob Smith|88000.0|  9100.0|
+| Henry Wilson|85000.0|  6100.0|
++-------------+-------+--------+
+
+
+============================================================
+STEP 16: EXERCISE 5.1 – INNER JOIN
+============================================================
+
+scala> spark.sql("""
+     | SELECT e.emp_id, e.name, e.salary,
+     |        d.dept_name, d.location
+     | FROM employees e
+     | INNER JOIN departments d ON e.dept_id = d.dept_id
+     | ORDER BY d.dept_name, e.name
+     | """).show()
+
++------+-------------+-------+-----------+--------+
+|emp_id|         name| salary|  dept_name|location|
++------+-------------+-------+-----------+--------+
+|   108| Henry Wilson|85000.0|    Finance| Chicago|
+|   105| Eva Martinez|65000.0|         HR|  Boston|
+|   107|   Grace Park|71000.0|  Marketing|New York|
+|   101|Alice Johnson|95000.0|Engineering|New York|
+|   102|    Bob Smith|88000.0|Engineering|New York|
+|   106|  Frank Brown|92000.0|Engineering|New York|
+|   110|   Jack Davis|78000.0|Engineering|New York|
+|   103|    Carol Lee|72000.0|      Sales| Chicago|
+|   104|    David Kim|68000.0|      Sales| Chicago|
+|   109|      Ivy Chen|75000.0|      Sales| Chicago|
++------+-------------+-------+-----------+--------+
+
+
+============================================================
+STEP 17: EXERCISE 5.2 – LEFT JOIN
+============================================================
+
+scala> spark.sql("""
+     | SELECT d.dept_id, d.dept_name, e.emp_id, e.name
+     | FROM departments d
+     | LEFT JOIN employees e ON d.dept_id = e.dept_id
+     | ORDER BY d.dept_id, e.emp_id
+     | """).show()
+
++-------+-----------+------+-------------+
+|dept_id|  dept_name|emp_id|         name|
++-------+-----------+------+-------------+
+|     10|Engineering|   101|Alice Johnson|
+|     10|Engineering|   102|    Bob Smith|
+|     10|Engineering|   106|  Frank Brown|
+|     10|Engineering|   110|   Jack Davis|
+|     20|      Sales|   103|    Carol Lee|
+|     20|      Sales|   104|    David Kim|
+|     20|      Sales|   109|      Ivy Chen|
+|     30|         HR|   105| Eva Martinez|
+|     40|  Marketing|   107|   Grace Park|
+|     50|    Finance|   108| Henry Wilson|
++-------+-----------+------+-------------+
+
+
+============================================================
+STEP 18: EXERCISE 5.3 – FULL OUTER JOIN
+============================================================
+
+scala> spark.sql("""
+     | WITH bonus_eligible AS (
+     |   SELECT 101 AS emp_id, 'Y' AS bonus_flag UNION ALL
+     |   SELECT 103, 'Y' UNION ALL
+     |   SELECT 108, 'Y' UNION ALL
+     |   SELECT 999, 'Y'
+     | )
+     | SELECT COALESCE(e.emp_id, b.emp_id) AS emp_id,
+     |        e.name,
+     |        b.bonus_flag
+     | FROM employees e
+     | FULL OUTER JOIN bonus_eligible b
+     |   ON e.emp_id = b.emp_id
+     | ORDER BY emp_id
+     | """).show()
+
++------+-------------+----------+
+|emp_id|         name|bonus_flag|
++------+-------------+----------+
+|   101|Alice Johnson|         Y|
+|   102|    Bob Smith|      null|
+|   103|    Carol Lee|         Y|
+|   104|    David Kim|      null|
+|   105| Eva Martinez|      null|
+|   106|  Frank Brown|      null|
+|   107|   Grace Park|      null|
+|   108| Henry Wilson|         Y|
+|   109|      Ivy Chen|      null|
+|   110|   Jack Davis|      null|
+|   999|         null|         Y|
++------+-------------+----------+
+
+
+============================================================
+STEP 19: EXERCISE 5.4 – SELF JOIN (MANAGER HIERARCHY)
+============================================================
+
+scala> spark.sql("""
+     | SELECT e.emp_id,
+     |        e.name AS employee,
+     |        m.name AS manager
+     | FROM employees e
+     | LEFT JOIN employees m ON e.manager_id = m.emp_id
+     | ORDER BY e.emp_id
+     | """).show()
+
++------+-------------+-------------+
+|emp_id|     employee|      manager|
++------+-------------+-------------+
+|   101|Alice Johnson|         null|
+|   102|    Bob Smith|Alice Johnson|
+|   103|    Carol Lee|         null|
+|   104|    David Kim|    Carol Lee|
+|   105| Eva Martinez|         null|
+|   106|  Frank Brown|Alice Johnson|
+|   107|   Grace Park|         null|
+|   108| Henry Wilson|         null|
+|   109|      Ivy Chen|    Carol Lee|
+|   110|   Jack Davis|Alice Johnson|
++------+-------------+-------------+
+
+
+============================================================
+STEP 20: EXERCISE 6.1 – ROW_NUMBER, RANK, DENSE_RANK
+============================================================
+
+scala> spark.sql("""
+     | SELECT name, dept_id, salary,
+     |        ROW_NUMBER() OVER (
+     |          PARTITION BY dept_id ORDER BY salary DESC
+     |        ) AS rn,
+     |        RANK() OVER (
+     |          PARTITION BY dept_id ORDER BY salary DESC
+     |        ) AS rnk,
+     |        DENSE_RANK() OVER (
+     |          PARTITION BY dept_id ORDER BY salary DESC
+     |        ) AS drnk
+     | FROM employees
+     | ORDER BY dept_id, salary DESC
+     | """).show()
+
++-------------+-------+-------+---+---+----+
+|         name|dept_id| salary| rn|rnk|drnk|
++-------------+-------+-------+---+---+----+
+|Alice Johnson|     10|95000.0|  1|  1|   1|
+|  Frank Brown|     10|92000.0|  2|  2|   2|
+|    Bob Smith|     10|88000.0|  3|  3|   3|
+|   Jack Davis|     10|78000.0|  4|  4|   4|
+|      Ivy Chen|     20|75000.0|  1|  1|   1|
+|    Carol Lee|     20|72000.0|  2|  2|   2|
+|    David Kim|     20|68000.0|  3|  3|   3|
+| Eva Martinez|     30|65000.0|  1|  1|   1|
+|   Grace Park|     40|71000.0|  1|  1|   1|
+| Henry Wilson|     50|85000.0|  1|  1|   1|
++-------------+-------+-------+---+---+----+
+
+
+============================================================
+STEP 21: EXERCISE 6.2 – LAG AND LEAD
+============================================================
+
+scala> spark.sql("""
+     | SELECT dept_id, name, hire_date, salary,
+     |        LAG(salary) OVER (
+     |          PARTITION BY dept_id ORDER BY hire_date
+     |        ) AS prev_salary,
+     |        LEAD(salary) OVER (
+     |          PARTITION BY dept_id ORDER BY hire_date
+     |        ) AS next_salary
+     | FROM employees
+     | ORDER BY dept_id, hire_date
+     | """).show()
+
++-------+-------------+----------+-------+-----------+-----------+
+|dept_id|         name| hire_date| salary|prev_salary|next_salary|
++-------+-------------+----------+-------+-----------+-----------+
+|     10|  Frank Brown|2018-05-01|92000.0|       null|    95000.0|
+|     10|Alice Johnson|2020-01-15|95000.0|    92000.0|    88000.0|
+|     10|    Bob Smith|2021-03-20|88000.0|    95000.0|    78000.0|
+|     10|   Jack Davis|2022-08-30|78000.0|    88000.0|       null|
+|     20|    Carol Lee|2019-07-10|72000.0|       null|    68000.0|
+|     20|    David Kim|2022-02-05|68000.0|    72000.0|    75000.0|
+|     20|      Ivy Chen|2023-01-22|75000.0|    68000.0|       null|
+|     30| Eva Martinez|2020-11-12|65000.0|       null|       null|
+|     40|   Grace Park|2021-09-18|71000.0|       null|       null|
+|     50| Henry Wilson|2019-12-01|85000.0|       null|       null|
++-------+-------------+----------+-------+-----------+-----------+
+
+
+============================================================
+STEP 22: EXERCISE 6.3 – RUNNING TOTAL / CUMULATIVE SUM
+============================================================
+
+scala> spark.sql("""
+     | SELECT dept_id, name, hire_date, salary,
+     |        SUM(salary) OVER (
+     |          PARTITION BY dept_id
+     |          ORDER BY hire_date
+     |          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+     |        ) AS running_salary
+     | FROM employees
+     | ORDER BY dept_id, hire_date
+     | """).show()
+
++-------+-------------+----------+-------+--------------+
+|dept_id|         name| hire_date| salary|running_salary|
++-------+-------------+----------+-------+--------------+
+|     10|  Frank Brown|2018-05-01|92000.0|       92000.0|
+|     10|Alice Johnson|2020-01-15|95000.0|      187000.0|
+|     10|    Bob Smith|2021-03-20|88000.0|      275000.0|
+|     10|   Jack Davis|2022-08-30|78000.0|      353000.0|
+|     20|    Carol Lee|2019-07-10|72000.0|       72000.0|
+|     20|    David Kim|2022-02-05|68000.0|      140000.0|
+|     20|      Ivy Chen|2023-01-22|75000.0|      215000.0|
+|     30| Eva Martinez|2020-11-12|65000.0|       65000.0|
+|     40|   Grace Park|2021-09-18|71000.0|       71000.0|
+|     50| Henry Wilson|2019-12-01|85000.0|       85000.0|
++-------+-------------+----------+-------+--------------+
+
+
+============================================================
+STEP 23: PREREQUISITE – PARSE SKILLS_JSON
+============================================================
+
+scala> spark.sql("""
+     | CREATE OR REPLACE TEMPORARY VIEW emp_skills AS
+     | SELECT emp_id, name, dept_id, salary,
+     |        from_json(
+     |          skills_json,
+     |          'ARRAY<STRUCT<skill:STRING,level:STRING>>'
+     |        ) AS skills
+     | FROM employees
+     | """)
+
+scala> spark.sql("SELECT emp_id, name, skills FROM emp_skills").show(false)
+
++------+-------------+------------------------------------------------------+
+|emp_id|name         |skills                                                |
++------+-------------+------------------------------------------------------+
+|101   |Alice Johnson|[{Scala, Expert}, {Spark, Advanced}]                 |
+|102   |Bob Smith    |[{Java, Advanced}, {Kafka, Intermediate}]            |
+|103   |Carol Lee    |[{CRM, Expert}, {Negotiation, Advanced}]             |
+|104   |David Kim    |[{Excel, Advanced}]                                  |
+|105   |Eva Martinez |[{Recruiting, Expert}, {Payroll, Intermediate}]      |
+|106   |Frank Brown  |[{Python, Expert}, {Spark, Expert}, {Airflow, Advanced}]|
+|107   |Grace Park   |[{SEO, Advanced}, {Content, Expert}]                 |
+|108   |Henry Wilson |[{Accounting, Expert}, {Excel, Expert}]              |
+|109   |Ivy Chen     |[{Salesforce, Intermediate}]                         |
+|110   |Jack Davis   |[{Scala, Intermediate}, {SQL, Advanced}]             |
++------+-------------+------------------------------------------------------+
+
+
+============================================================
+STEP 24: EXERCISE 7.1 – TRANSFORM
+============================================================
+
+scala> spark.sql("""
+     | SELECT emp_id, name,
+     |        transform(skills, x -> x.skill) AS skill_names
+     | FROM emp_skills
+     | """).show(false)
+
++------+-------------+--------------------------------+
+|emp_id|name         |skill_names                     |
++------+-------------+--------------------------------+
+|101   |Alice Johnson|[Scala, Spark]                   |
+|102   |Bob Smith    |[Java, Kafka]                   |
+|103   |Carol Lee    |[CRM, Negotiation]              |
+|104   |David Kim    |[Excel]                         |
+|105   |Eva Martinez |[Recruiting, Payroll]           |
+|106   |Frank Brown  |[Python, Spark, Airflow]        |
+|107   |Grace Park   |[SEO, Content]                  |
+|108   |Henry Wilson |[Accounting, Excel]             |
+|109   |Ivy Chen     |[Salesforce]                    |
+|110   |Jack Davis   |[Scala, SQL]                    |
++------+-------------+--------------------------------+
+
+
+============================================================
+STEP 25: EXERCISE 7.2 – FILTER
+============================================================
+
+scala> spark.sql("""
+     | SELECT emp_id, name,
+     |        filter(skills, x -> x.level = 'Expert') AS expert_skills
+     | FROM emp_skills
+     | """).show(false)
+
++------+-------------+--------------------------------------+
+|emp_id|name         |expert_skills                         |
++------+-------------+--------------------------------------+
+|101   |Alice Johnson|[{Scala, Expert}]                     |
+|102   |Bob Smith    |[]                                    |
+|103   |Carol Lee    |[{CRM, Expert}]                       |
+|104   |David Kim    |[]                                    |
+|105   |Eva Martinez |[{Recruiting, Expert}]                |
+|106   |Frank Brown  |[{Python, Expert}, {Spark, Expert}]   |
+|107   |Grace Park   |[{Content, Expert}]                   |
+|108   |Henry Wilson |[{Accounting, Expert}, {Excel, Expert}]|
+|109   |Ivy Chen     |[]                                    |
+|110   |Jack Davis   |[]                                    |
++------+-------------+--------------------------------------+
+
+
+============================================================
+STEP 26: EXERCISE 7.3 – AGGREGATE
+============================================================
+
+scala> spark.sql("""
+     | SELECT emp_id, name,
+     |        aggregate(skills, 0, (acc, x) -> acc + 1) AS skill_count
+     | FROM emp_skills
+     | ORDER BY skill_count DESC
+     | """).show()
+
++------+-------------+-----------+
+|emp_id|         name|skill_count|
++------+-------------+-----------+
+|   106|  Frank Brown|          3|
+|   101|Alice Johnson|          2|
+|   102|    Bob Smith|          2|
+|   103|    Carol Lee|          2|
+|   105| Eva Martinez|          2|
+|   107|   Grace Park|          2|
+|   108| Henry Wilson|          2|
+|   110|   Jack Davis|          2|
+|   104|    David Kim|          1|
+|   109|      Ivy Chen|          1|
++------+-------------+-----------+
+
+
+============================================================
+STEP 27: EXERCISE 8.1 – PARSE AND EXPLODE TO ROWS
+============================================================
+
+scala> spark.sql("""
+     | SELECT e.name,
+     |        d.dept_name,
+     |        s.skill,
+     |        s.level
+     | FROM employees e
+     | JOIN departments d ON e.dept_id = d.dept_id
+     | LATERAL VIEW explode(
+     |   from_json(
+     |     e.skills_json,
+     |     'ARRAY<STRUCT<skill:STRING,level:STRING>>'
+     |   )
+     | ) t AS s
+     | ORDER BY e.name, s.skill
+     | """).show()
+
++-------------+-----------+------------+------------+
+|         name|  dept_name|       skill|       level|
++-------------+-----------+------------+------------+
+|Alice Johnson|Engineering|       Scala|      Expert|
+|Alice Johnson|Engineering|       Spark|    Advanced|
+|    Bob Smith|Engineering|        Java|    Advanced|
+|    Bob Smith|Engineering|       Kafka|Intermediate|
+|    Carol Lee|      Sales|         CRM|      Expert|
+|    Carol Lee|      Sales|Negotiation|    Advanced|
+|    David Kim|      Sales|       Excel|    Advanced|
+| Eva Martinez|         HR|  Recruiting|      Expert|
+| Eva Martinez|         HR|     Payroll|Intermediate|
+|  Frank Brown|Engineering|     Airflow|    Advanced|
+|  Frank Brown|Engineering|      Python|      Expert|
+|  Frank Brown|Engineering|       Spark|      Expert|
+|   Grace Park|  Marketing|     Content|      Expert|
+|   Grace Park|  Marketing|         SEO|    Advanced|
+| Henry Wilson|    Finance|  Accounting|      Expert|
+| Henry Wilson|    Finance|       Excel|      Expert|
+|      Ivy Chen|      Sales|  Salesforce|Intermediate|
+|   Jack Davis|Engineering|       Scala|Intermediate|
+|   Jack Davis|Engineering|         SQL|    Advanced|
++-------------+-----------+------------+------------+
+
+
+============================================================
+STEP 28: EXERCISE 8.2 – NAMED_STRUCT
+============================================================
+
+scala> spark.sql("""
+     | SELECT d.dept_name,
+     |        named_struct(
+     |          'name', e.name,
+     |          'salary', e.salary
+     |        ) AS employee_info
+     | FROM departments d
+     | JOIN employees e ON d.dept_id = e.dept_id
+     | WHERE e.emp_id IN (101, 103, 105, 107, 108)
+     | ORDER BY d.dept_name
+     | """).show(false)
+
++-----------+------------------------------+
+|dept_name  |employee_info                 |
++-----------+------------------------------+
+|Engineering|{Alice Johnson, 95000.0}      |
+|Finance    |{Henry Wilson, 85000.0}       |
+|HR         |{Eva Martinez, 65000.0}       |
+|Marketing  |{Grace Park, 71000.0}         |
+|Sales      |{Carol Lee, 72000.0}          |
++-----------+------------------------------+
+
+
+============================================================
+STEP 29: EXERCISE 9A – SQL VS DATAFRAME API
+SOLUTION A: PURE SPARK SQL
+============================================================
+
+scala> spark.sql("""
+     | WITH ranked AS (
+     |   SELECT e.name, e.salary, d.dept_name,
+     |          ROW_NUMBER() OVER (
+     |            PARTITION BY e.dept_id
+     |            ORDER BY e.salary DESC
+     |          ) AS rn
+     |   FROM employees e
+     |   JOIN departments d ON e.dept_id = d.dept_id
+     | )
+     | SELECT dept_name, name AS top_employee, salary
+     | FROM ranked
+     | WHERE rn = 1
+     | ORDER BY dept_name
+     | """).show()
+
++-----------+-------------+-------+
+|  dept_name| top_employee| salary|
++-----------+-------------+-------+
+|Engineering|Alice Johnson|95000.0|
+|    Finance| Henry Wilson|85000.0|
+|         HR| Eva Martinez|65000.0|
+|  Marketing|   Grace Park|71000.0|
+|      Sales|      Ivy Chen|75000.0|
++-----------+-------------+-------+
+
+
+============================================================
+STEP 30: EXERCISE 9B – DATAFRAME API
+SOLUTION B: DATAFRAME APPROACH
+============================================================
+
+scala> import org.apache.spark.sql.expressions.Window
+
+scala> val w = Window.partitionBy("dept_id").orderBy(col("salary").desc)
+
+scala> val result = employees
+     |   .withColumn("rn", row_number().over(w))
+     |   .filter(col("rn") === 1)
+     |   .join(departments, "dept_id")
+     |   .select(
+     |     col("dept_name"),
+     |     col("name").as("top_employee"),
+     |     col("salary")
+     |   )
+     |   .orderBy("dept_name")
+
+scala> result.show()
+
++-----------+-------------+-------+
+|  dept_name| top_employee| salary|
++-----------+-------------+-------+
+|Engineering|Alice Johnson|95000.0|
+|    Finance| Henry Wilson|85000.0|
+|         HR| Eva Martinez|65000.0|
+|  Marketing|   Grace Park|71000.0|
+|      Sales|      Ivy Chen|75000.0|
++-----------+-------------+-------+
+
+
+============================================================
+STEP 31: CHALLENGE 10.1 – TOP EARNER PER LOCATION
+============================================================
+
+scala> spark.sql("""
+     | WITH ranked AS (
+     |   SELECT d.location, e.name, e.salary,
+     |          ROW_NUMBER() OVER (
+     |            PARTITION BY d.location
+     |            ORDER BY e.salary DESC
+     |          ) AS rn
+     |   FROM employees e
+     |   JOIN departments d ON e.dept_id = d.dept_id
+     | )
+     | SELECT location, name, salary
+     | FROM ranked
+     | WHERE rn = 1
+     | ORDER BY location
+     | """).show()
+
++--------+-------------+-------+
+|location|         name| salary|
++--------+-------------+-------+
+|  Boston| Eva Martinez|65000.0|
+| Chicago|      Ivy Chen|75000.0|
+|New York|Alice Johnson|95000.0|
++--------+-------------+-------+
+
+
+============================================================
+STEP 32: CHALLENGE 10.2 – SKILL SUMMARY WITH
+         HIGHER-ORDER FUNCTIONS
+============================================================
+
+scala> spark.sql("""
+     | SELECT emp_id, name,
+     |        size(skills) AS skill_count,
+     |        exists(skills, x -> x.skill = 'Spark') AS has_spark,
+     |        transform(skills, x -> x.skill) AS skill_names
+     | FROM emp_skills
+     | ORDER BY skill_count DESC
+     | """).show(false)
+
++------+-------------+-----------+---------+--------------------------------+
+|emp_id|name         |skill_count|has_spark|skill_names                     |
++------+-------------+-----------+---------+--------------------------------+
+|106   |Frank Brown  |3          |true     |[Python, Spark, Airflow]        |
+|101   |Alice Johnson|2          |true     |[Scala, Spark]                  |
+|102   |Bob Smith    |2          |false    |[Java, Kafka]                   |
+|103   |Carol Lee    |2          |false    |[CRM, Negotiation]              |
+|105   |Eva Martinez |2          |false    |[Recruiting, Payroll]           |
+|107   |Grace Park   |2          |false    |[SEO, Content]                  |
+|108   |Henry Wilson |2          |false    |[Accounting, Excel]             |
+|110   |Jack Davis   |2          |false    |[Scala, SQL]                    |
+|104   |David Kim    |1          |false    |[Excel]                         |
+|109   |Ivy Chen     |1          |false    |[Salesforce]                    |
++------+-------------+-----------+---------+--------------------------------+
+
+
+============================================================
+STEP 33: CHALLENGE 10.3 – MANAGER SALARY GAP
+============================================================
+
+scala> spark.sql("""
+     | SELECT e.name AS employee,
+     |        m.name AS manager,
+     |        e.salary AS emp_salary,
+     |        m.salary AS mgr_salary,
+     |        ROUND(m.salary - e.salary, 2) AS gap
+     | FROM employees e
+     | JOIN employees m ON e.manager_id = m.emp_id
+     | ORDER BY gap DESC
+     | """).show()
+
++-----------+-------------+----------+----------+-------+
+|   employee|      manager|emp_salary|mgr_salary|    gap|
++-----------+-------------+----------+----------+-------+
+|  Bob Smith|Alice Johnson|   88000.0|   95000.0| 7000.0|
+| Frank Brown|Alice Johnson|  92000.0|   95000.0| 3000.0|
+|  Jack Davis|Alice Johnson|  78000.0|   95000.0|17000.0|
+|  David Kim|    Carol Lee|  68000.0|   72000.0| 4000.0|
+|    Ivy Chen|    Carol Lee|  75000.0|   72000.0|-3000.0|
++-----------+-------------+----------+----------+-------+
+
+
+============================================================
+STEP 34: CHALLENGE 10.4 – EXPLODED SKILLS +
+         RUNNING SKILL COUNT PER DEPARTMENT
+============================================================
+
+scala> spark.sql("""
+     | WITH exploded AS (
+     |   SELECT d.dept_name, e.name, s.skill, s.level
+     |   FROM employees e
+     |   JOIN departments d ON e.dept_id = d.dept_id
+     |   LATERAL VIEW explode(
+     |     from_json(
+     |       e.skills_json,
+     |       'ARRAY<STRUCT<skill:STRING,level:STRING>>'
+     |     )
+     |   ) t AS s
+     | )
+     | SELECT dept_name, name, skill, level,
+     |        COUNT(*) OVER (
+     |          PARTITION BY dept_name
+     |          ORDER BY name, skill
+     |          ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW
+     |        ) AS running_skill_rows
+     | FROM exploded
+     | ORDER BY dept_name, name, skill
+     | """).show()
+
++-----------+-------------+------------+------------+------------------+
+|  dept_name|         name|       skill|       level|running_skill_rows|
++-----------+-------------+------------+------------+------------------+
+|Engineering|Alice Johnson|       Scala|      Expert|                 1|
+|Engineering|Alice Johnson|       Spark|    Advanced|                 2|
+|Engineering|    Bob Smith|        Java|    Advanced|                 3|
+|Engineering|    Bob Smith|       Kafka|Intermediate|                 4|
+|Engineering|  Frank Brown|     Airflow|    Advanced|                 5|
+|Engineering|  Frank Brown|      Python|      Expert|                 6|
+|Engineering|  Frank Brown|       Spark|      Expert|                 7|
+|Engineering|   Jack Davis|       Scala|Intermediate|                 8|
+|Engineering|   Jack Davis|         SQL|    Advanced|                 9|
+|    Finance| Henry Wilson|  Accounting|      Expert|                 1|
+|    Finance| Henry Wilson|       Excel|      Expert|                 2|
+|         HR| Eva Martinez|     Payroll|Intermediate|                 1|
+|         HR| Eva Martinez|  Recruiting|      Expert|                 2|
+|  Marketing|   Grace Park|     Content|      Expert|                 1|
+|  Marketing|   Grace Park|         SEO|    Advanced|                 2|
+|      Sales|    Carol Lee|         CRM|      Expert|                 1|
+|      Sales|    Carol Lee|Negotiation|    Advanced|                 2|
+|      Sales|    David Kim|       Excel|    Advanced|                 3|
+|      Sales|      Ivy Chen|  Salesforce|Intermediate|                 4|
++-----------+-------------+------------+------------+------------------+

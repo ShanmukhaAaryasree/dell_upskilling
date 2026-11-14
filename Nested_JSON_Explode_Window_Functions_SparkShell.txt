@@ -1,7 +1,6 @@
 
-================================================================
 STEP 1: CREATE THE INPUT FILE – orders.json
-================================================================
+
 
 Create a file named:
 
@@ -18,18 +17,16 @@ Each order must be on a separate line.
 {"orderId":"O106","orderDate":"2026-11-06","customer":{"id":"C101","name":"Raj","city":"Hyderabad"},"items":[{"product":"Mobile","quantity":1,"price":30000}],"payment":{"mode":"UPI","status":"Success"}}
 
 
-================================================================
 STEP 2: IMPORT REQUIRED SPARK LIBRARIES
-================================================================
+
 
 scala> import org.apache.spark.sql.functions._
 
 scala> import org.apache.spark.sql.types._
 
 
-================================================================
 STEP 3: READ JSON FILE AS TEXT
-================================================================
+
 
 scala> val rawOrders = spark.read.text("orders.json")
 
@@ -47,9 +44,8 @@ scala> rawOrders.show(false)
 +------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
 
-================================================================
 STEP 4: DEFINE EXPLICIT NESTED JSON SCHEMA
-================================================================
+
 
 scala> val customerSchema = StructType(Seq(
      |   StructField("id", StringType, true),
@@ -82,9 +78,8 @@ EXPECTED RESULT:
 Nested schema created successfully.
 
 
-================================================================
 STEP 5: PARSE JSON USING from_json()
-================================================================
+
 
 scala> val parsedOrders = rawOrders
      |   .select(from_json(col("value"), orderSchema).as("order"))
@@ -123,9 +118,9 @@ scala> parsedOrders.show(false)
 +-------+----------+------------------------+-----------------------------------------------+-------------------+
 
 
-================================================================
+
 STEP 6: EXTRACT NESTED FIELDS
-================================================================
+
 
 scala> val ordersExtracted = parsedOrders.select(
      |   col("orderId"),
@@ -151,9 +146,8 @@ scala> ordersExtracted.show()
 +-------+----------+----------+------------+---------+-----------+------------+
 
 
-================================================================
 STEP 7: EXPLODE ITEMS ARRAY INTO INDIVIDUAL ROWS
-================================================================
+
 
 scala> val explodedOrders = parsedOrders
      |   .select(
@@ -184,9 +178,9 @@ scala> explodedOrders.show(false)
 +-------+----------+----------+------------+---------+-----------+------------+-----------------------+
 
 
-================================================================
+
 STEP 8: EXTRACT PRODUCT DETAILS AND CALCULATE PRODUCT_AMOUNT
-================================================================
+
 
 scala> val products = explodedOrders.select(
      |   col("orderId"),
@@ -220,9 +214,8 @@ scala> products.show()
 +-------+----------+----------+------------+---------+------------+----------+--------+-------+--------------+
 
 
-================================================================
 STEP 9: CALCULATE TOTAL SALES FOR EACH PRODUCT
-================================================================
+
 
 scala> val productSales = products
      |   .groupBy("product")
@@ -243,9 +236,9 @@ scala> productSales.show()
 +----------+-----------+
 
 
-================================================================
+
 STEP 10: CALCULATE TOTAL VALUE OF EACH ORDER
-================================================================
+
 
 scala> val orderTotals = products
      |   .groupBy("orderId", "orderDate", "customerId", "customerName")
@@ -266,9 +259,8 @@ scala> orderTotals.show()
 +-------+----------+----------+------------+-----------+
 
 
-================================================================
 STEP 11: CREATE TEMPORARY VIEW – orders_view
-================================================================
+
 
 scala> parsedOrders.createOrReplaceTempView("orders_view")
 
@@ -286,9 +278,7 @@ scala> spark.sql("SELECT * FROM orders_view").show(false)
 +-------+----------+------------------------+-----------------------------------------------+-------------------+
 
 
-================================================================
 STEP 12: CREATE TEMPORARY VIEW – products_view
-================================================================
 
 scala> products.createOrReplaceTempView("products_view")
 
@@ -309,9 +299,8 @@ scala> spark.sql("SELECT * FROM products_view").show()
 +-------+----------+----------+------------+---------+------------+----------+--------+-------+--------------+
 
 
-================================================================
 STEP 13: FIND ORDERS PLACED BY CUSTOMERS FROM HYDERABAD
-================================================================
+
 
 scala> spark.sql("""
      | SELECT orderId, orderDate,
@@ -332,9 +321,9 @@ scala> spark.sql("""
 +-------+----------+----------+------------+---------+
 
 
-================================================================
+
 STEP 14: FIND ORDERS WHERE PAYMENT STATUS IS SUCCESS
-================================================================
+
 
 scala> spark.sql("""
      | SELECT orderId, orderDate,
@@ -357,9 +346,8 @@ scala> spark.sql("""
 +-------+----------+------------+-----------+------------+
 
 
-================================================================
 STEP 15: FIND PRODUCTS WITH UNIT PRICE GREATER THAN 10,000
-================================================================
+
 
 scala> spark.sql("""
      | SELECT orderId, product, quantity, price
@@ -379,9 +367,8 @@ scala> spark.sql("""
 +-------+-------+--------+-------+
 
 
-================================================================
 STEP 16: CALCULATE TOTAL SPENDING BY CUSTOMER
-================================================================
+
 
 scala> spark.sql("""
      | SELECT customerId, customerName,
@@ -405,9 +392,9 @@ scala> spark.sql("""
 +----------+------------+--------------+
 
 
-================================================================
+
 STEP 17: CREATE ORDER TOTALS TEMPORARY VIEW
-================================================================
+
 
 scala> orderTotals.createOrReplaceTempView("order_totals_view")
 
@@ -425,9 +412,8 @@ scala> spark.sql("SELECT * FROM order_totals_view").show()
 +-------+----------+----------+------------+-----------+
 
 
-================================================================
 STEP 18: ROW_NUMBER() – LATEST ORDER FOR EACH CUSTOMER
-================================================================
+
 
 scala> spark.sql("""
      | SELECT customerId, customerName, orderId,
@@ -477,9 +463,7 @@ scala> spark.sql("""
 +----------+------------+-------+----------+-----------+
 
 
-================================================================
 STEP 19: RANK() – RANK CUSTOMER ORDERS BY ORDER VALUE
-================================================================
 
 scala> spark.sql("""
      | SELECT customerId, customerName, orderId,
@@ -504,9 +488,9 @@ scala> spark.sql("""
 +----------+------------+-------+-----------+----------+
 
 
-================================================================
+
 STEP 20: DENSE_RANK() – RANK PRODUCTS BY TOTAL SALES
-================================================================
+
 
 scala> spark.sql("""
      | WITH product_sales AS (
@@ -535,9 +519,8 @@ scala> spark.sql("""
 +----------+-----------+----------+
 
 
-================================================================
 STEP 21: SUM() OVER – RUNNING SPENDING TOTAL
-================================================================
+
 
 scala> spark.sql("""
      | SELECT customerId, customerName,
@@ -564,9 +547,8 @@ scala> spark.sql("""
 +----------+------------+-------+----------+-----------+-------------+
 
 
-================================================================
 STEP 22: LAG() – PREVIOUS ORDER VALUE
-================================================================
+
 
 scala> spark.sql("""
      | SELECT customerId, customerName,
@@ -591,9 +573,9 @@ scala> spark.sql("""
 +----------+------------+-------+----------+-----------+--------------------+
 
 
-================================================================
+
 STEP 23: FIND THE SECOND ORDER BY VALUE FOR EACH CUSTOMER
-================================================================
+
 
 scala> spark.sql("""
      | SELECT customerId, customerName,
@@ -618,9 +600,9 @@ scala> spark.sql("""
 +----------+------------+-------+-----------+
 
 
-================================================================
+
 STEP 24: VALIDATE THE RESULTS
-================================================================
+
 
 scala> println("Total orders: " + parsedOrders.count())
 

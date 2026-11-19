@@ -7,6 +7,19 @@ This repository contains several independent Scala and Apache Spark learning pro
 - **Spark Typed Datasets** (repository root): demonstrates DataFrame and typed Dataset operations over employee data.
 - **Employee Spark Analysis** ([`Employee_Spark-Scala3`](Employee_Spark-Scala3/)): employee analysis with reusable Spark DataFrame transformations and a captured sample output.
 - **Spark Testing Capstone** ([`SparkTestingCapstone`](SparkTestingCapstone/)): a standalone Scala/Spark project with source code, tests, build configuration, and captured output in one folder. Its GitHub Actions workflow is at the repository-required root path, `.github/workflows/ci.yml`.
+- **Spark Kafka to Iceberg Streaming** ([`SparkKafkaIcebergStreaming`](SparkKafkaIcebergStreaming/)): a Kubernetes Spark Structured Streaming application that consumes sensor JSON records from Kafka and writes them to an Apache Iceberg table.
+
+## Spark Kafka to Iceberg Streaming
+
+The [`SparkKafkaIcebergStreaming`](SparkKafkaIcebergStreaming/) folder contains the complete Scala/Spark application, Docker and SBT configuration, Kubernetes manifests, and captured console output.
+
+The application creates the `local.iot.sensor_readings` Iceberg table, reads JSON sensor events from the Kafka `sensor-data` topic, and appends valid records to the table.
+
+See the [project README](SparkKafkaIcebergStreaming/README.md) for build, deployment, producer, Spark SQL verification, and cleanup instructions.
+
+**Output screenshot:**
+
+![Sensor streaming Spark SQL output](SparkKafkaIcebergStreaming/outputs/sensor-streaming-output.png)
 
 ## Spark Testing Capstone
 

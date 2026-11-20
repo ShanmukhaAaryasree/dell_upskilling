@@ -5,11 +5,22 @@ This repository contains several independent Scala and Apache Spark learning pro
 ## Projects
 
 - **Spark Typed Datasets** (repository root): demonstrates DataFrame and typed Dataset operations over employee data.
+- **Customer Validation and Student Grades** ([`CustomerValidation`](CustomerValidation/)): standalone Scala assignments for validating customer records and evaluating student marks.
 - **Customer Orders RDD vs DataFrame Shuffle** ([`CustomerOrdersShuffleAssignment`](CustomerOrdersShuffleAssignment/)): compares RDD and DataFrame aggregations, RDD lineage, and DataFrame physical plans for customer order data.
 - **Employee Spark Analysis** ([`Employee_Spark-Scala3`](Employee_Spark-Scala3/)): employee analysis with reusable Spark DataFrame transformations and a captured sample output.
 - **Spark Testing Capstone** ([`SparkTestingCapstone`](SparkTestingCapstone/)): a standalone Scala/Spark project with source code, tests, build configuration, and captured output in one folder. Its GitHub Actions workflow is at the repository-required root path, `.github/workflows/ci.yml`.
 - **Spark Kafka to Iceberg Streaming** ([`SparkKafkaIcebergStreaming`](SparkKafkaIcebergStreaming/)): a Kubernetes Spark Structured Streaming application that consumes sensor JSON records from Kafka and writes them to an Apache Iceberg table.
 - **LinkedIn Streaming Analytics** ([`LinkedIn-Streaming-Analytics`](LinkedIn-Streaming-Analytics/)): a Kafka and Spark Structured Streaming application that calculates post engagement, unique members, and event-time window metrics.
+
+## Customer Validation and Student Grades
+
+The [`CustomerValidation`](CustomerValidation/) folder contains two standalone
+Scala assignments. One validates customer IDs, names, ages, and email values;
+the other checks student marks, incomplete assessments, pass criteria, and
+distinctions.
+
+See the [project README](CustomerValidation/README.md) for requirements and
+commands to run either assignment.
 
 ## Customer Orders RDD vs DataFrame Shuffle
 
